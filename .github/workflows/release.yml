@@ -1,0 +1,24 @@
+# Publie automatiquement l'installateur Windows sur GitHub Releases
+# quand tu pousses un tag de version (ex. v1.0.1).
+name: Publier une version
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write        # seule permission nécessaire : créer la Release
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci || npm install
+      - name: Vérifier que le tag correspond à la version de package.json
+        shell: bash
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_NAME}" != "v${V}" ]; then echo "Tag ${GITHUB_REF_NAME} différent de package.json (v${V})"; exit 1; fi
+      - run: npm run release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # fourni automatiquement par GitHub, rien à configurer

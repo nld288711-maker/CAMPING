@@ -1,0 +1,59 @@
+{
+  "name": "camping",
+  "productName": "Campground Builder",
+  "version": "1.0.0",
+  "description": "CAMPING — jeu de gestion de camping avec comptes et sauvegardes en ligne",
+  "main": "electron/main.js",
+  "author": "CAMPING",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "postinstall": "node scripts/copy-vendor.js",
+    "config": "node scripts/generate-config.js",
+    "site": "node scripts/build-site.js && npx serve website -l 3000",
+    "start": "electron .",
+    "dist": "node scripts/sync-version.js && electron-builder --win --publish never",
+    "release": "node scripts/sync-version.js && electron-builder --win --publish always",
+    "css": "node scripts/build-site.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "electron-updater": "^6.3.9",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "fr.camping.game",
+    "productName": "Campground Builder",
+    "files": [
+      "electron/**/*",
+      "game/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png",
+      "artifactName": "CAMPING-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "nld288711-maker",
+        "repo": "CAMPING",
+        "releaseType": "release"
+      }
+    ],
+    "icon": "build/icon.png"
+  }
+}

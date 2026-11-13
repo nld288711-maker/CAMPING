@@ -1,0 +1,128 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="img/favicon.png"><!--CSS--><meta name="color-scheme" content="dark"><style>:root{--wood:#7a4b25;--wood-d:#3b2412;--wood-l:#a86a35;--cream:#fff3d6;--cream-d:#f0d9a8;--sun:#fbbf24;--sun-d:#b45309;--leaf:#4aa043;--leaf-d:#2a6d2b;--night:#14230f;--ink:#3b2412;--mu:#c9b79c;--err:#b91c1c}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;background:#14230f;color-scheme:dark}
+body{background:var(--night);color:var(--cream);font:16px/1.65 "Segoe UI",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+h1,h2,h3,.logo b,.btn{font-family:"Rockwell","Cooper Black","Georgia",serif}
+h1,h2,h3{line-height:1.1;font-weight:800}
+a{color:var(--sun)}
+.wrap{width:min(1120px,92vw);margin:0 auto}
+#ff{position:fixed;inset:0;z-index:1;pointer-events:none}
+.bg{position:fixed;inset:0;z-index:0;background:linear-gradient(rgba(20,35,15,.72),rgba(20,35,15,.92)),url(img/cover-small.jpg) center/cover;filter:saturate(1.1)}
+main,header.top,footer{position:relative;z-index:2}
+/* ---------- en-tête ---------- */
+header.top{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,#5c3719,#3b2412);border-bottom:4px solid var(--wood-l);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:10px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--cream)}
+.logo img{width:44px;height:44px;border-radius:12px;border:2px solid var(--sun);box-shadow:0 3px 0 var(--sun-d);transition:transform .3s}
+.logo:hover img{transform:rotate(-8deg) scale(1.08)}
+.logo b{font-size:20px;letter-spacing:.02em;text-shadow:0 2px 0 #000a}.logo b i{color:var(--sun);font-style:normal}
+#nav-auth{display:contents}
+nav{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+nav a{color:var(--cream-d);text-decoration:none;padding:8px 13px;border-radius:10px;font-weight:700;font-size:14px;transition:background .2s,color .2s}
+nav a:hover,nav a.on{background:rgba(255,243,214,.14);color:#fff}
+#snd{background:rgba(255,243,214,.12);border:2px solid var(--wood-l);color:var(--cream);border-radius:10px;width:42px;height:38px;font-size:18px;cursor:pointer;transition:transform .15s}
+#snd:hover{transform:scale(1.1)}#snd.hint{animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.7)}50%{box-shadow:0 0 0 10px rgba(251,191,36,0)}}
+/* ---------- boutons ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;cursor:pointer;text-decoration:none;font-weight:800;font-size:17px;padding:13px 26px;border-radius:14px;color:#fff;background:linear-gradient(180deg,#5fbd55,var(--leaf));box-shadow:0 5px 0 var(--leaf-d),0 10px 20px rgba(0,0,0,.35);transition:transform .12s,box-shadow .12s;text-shadow:0 2px 0 #0004}
+.btn:hover{transform:translateY(-3px);box-shadow:0 8px 0 var(--leaf-d),0 16px 26px rgba(0,0,0,.4)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--leaf-d)}
+.btn.sun{background:linear-gradient(180deg,#fde047,var(--sun));color:#3b2412;text-shadow:0 1px 0 #fff8;box-shadow:0 5px 0 var(--sun-d),0 10px 20px rgba(0,0,0,.35)}
+.btn.sun:hover{box-shadow:0 8px 0 var(--sun-d),0 16px 26px rgba(0,0,0,.4)}.btn.sun:active{box-shadow:0 2px 0 var(--sun-d)}
+.btn.wood{background:linear-gradient(180deg,var(--wood-l),var(--wood));box-shadow:0 5px 0 var(--wood-d),0 10px 20px rgba(0,0,0,.35)}
+.btn.big{font-size:22px;padding:18px 38px}.btn.sm{font-size:14px;padding:8px 16px;box-shadow:0 3px 0 var(--leaf-d)}
+.btn:disabled{opacity:.55;cursor:wait}
+/* ---------- accueil ---------- */
+.hero{position:relative;overflow:hidden;background:#87ceeb}
+.hero img{display:block;width:100%;height:clamp(420px,86vh,960px);object-fit:cover;object-position:50% 24%;transform:scale(1.06);will-change:transform;animation:kb 24s ease-in-out infinite alternate}
+@keyframes kb{from{transform:scale(1.06) translateX(-.6%)}to{transform:scale(1.12) translateX(.6%)}}
+.hero:after{content:"";position:absolute;inset:auto 0 0 0;height:46%;background:linear-gradient(transparent,var(--night))}
+.hero .cta{position:absolute;z-index:3;left:0;right:0;bottom:5%;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;padding:0 4vw}
+section{padding:78px 0;position:relative}
+section.alt{background:linear-gradient(180deg,rgba(59,36,18,.55),rgba(59,36,18,.85));border-block:3px solid rgba(168,106,53,.5)}
+.head{text-align:center;margin-bottom:38px}
+.head h2{font-size:clamp(30px,5vw,48px);color:var(--cream);text-shadow:0 3px 0 #000a}.head h2 em{color:var(--sun);font-style:normal}
+.head p{color:var(--mu);max-width:620px;margin:12px auto 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.card{background:linear-gradient(180deg,#5c3a1d,#46290f);border:2px solid var(--wood-l);border-radius:18px;padding:24px;box-shadow:0 8px 0 var(--wood-d),0 18px 30px rgba(0,0,0,.35);transition:transform .2s ease-out;transform-style:preserve-3d}
+.card .ic{font-size:40px;display:inline-block;animation:bob 3.2s ease-in-out infinite}
+.card:nth-child(2n) .ic{animation-delay:-1s}.card:nth-child(3n) .ic{animation-delay:-2s}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+.card h3{font-size:22px;margin:8px 0;color:var(--sun)}.card p{color:var(--cream-d);font-size:15px}
+.shots{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.shot{position:relative;aspect-ratio:16/10;border-radius:18px;overflow:hidden;border:3px solid var(--wood-l);box-shadow:0 8px 0 var(--wood-d),0 16px 28px rgba(0,0,0,.4)}
+.shot div{position:absolute;inset:0;background:url(img/cover.jpg) no-repeat;background-size:300%;transition:transform .7s cubic-bezier(.2,.7,.2,1)}
+.shot:hover div{transform:scale(1.18)}
+.shot span{position:absolute;left:0;right:0;bottom:0;padding:26px 14px 10px;background:linear-gradient(transparent,#000b);font-family:Rockwell,Georgia,serif;font-weight:800}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;counter-reset:s;padding-top:14px}
+.step{position:relative;padding:30px 22px 22px;text-align:center;background:var(--cream);color:var(--ink);border-radius:18px;box-shadow:0 7px 0 var(--cream-d),0 16px 26px rgba(0,0,0,.35)}
+.step:before{counter-increment:s;content:counter(s);position:absolute;left:50%;top:-22px;translate:-50% 0;width:46px;height:46px;border-radius:50%;background:var(--sun);color:var(--ink);font:800 24px Rockwell,Georgia,serif;display:grid;place-items:center;box-shadow:0 4px 0 var(--sun-d)}
+.step h3{margin-bottom:6px}.step p{font-size:15px;color:#6b4a2a}
+.news{display:grid;gap:16px;max-width:760px;margin:0 auto}
+.news time{color:var(--sun);font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.final{text-align:center;padding:90px 0}
+.final .pp{width:140px;height:140px;border-radius:30px;border:4px solid var(--sun);box-shadow:0 8px 0 var(--sun-d),0 20px 40px rgba(0,0,0,.5);animation:bob 4s ease-in-out infinite;margin-bottom:22px}
+/* ---------- révélation au scroll ---------- */
+.js .rv{opacity:0;transform:translateY(34px) scale(.98);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+.js .rv.in{opacity:1;transform:none}.js .rv:nth-child(2){transition-delay:.08s}.rv:nth-child(3){transition-delay:.16s}.rv:nth-child(4){transition-delay:.24s}.rv:nth-child(5){transition-delay:.32s}.rv:nth-child(6){transition-delay:.4s}
+/* ---------- pages intérieures ---------- */
+.panel{width:min(460px,92vw);margin:56px auto;background:var(--cream);color:var(--ink);border:4px solid var(--wood-l);border-radius:24px;padding:32px;box-shadow:0 10px 0 var(--wood-d),0 30px 60px rgba(0,0,0,.5);animation:rise .7s cubic-bezier(.2,.7,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(30px)}}
+.panel.wide{width:min(820px,92vw)}
+.panel h1{font-size:34px;color:var(--wood);margin-bottom:6px}.panel .sub{color:#7a5a3a;margin-bottom:18px}
+.panel h2{color:var(--wood);font-size:24px}
+label{display:block;font-size:13px;font-weight:800;color:var(--wood);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+input{width:100%;padding:13px 14px;border-radius:12px;border:2px solid #dbbf8e;background:#fff;color:var(--ink);font-size:16px;outline:0;transition:border-color .2s,box-shadow .2s}
+input:focus{border-color:var(--leaf);box-shadow:0 0 0 4px rgba(74,160,67,.2)}
+.panel form .btn,.panel>.btn,.panel .full{width:100%;justify-content:center;margin-top:22px}
+.msg{margin-top:14px;padding:11px 13px;border-radius:12px;font-size:14px;font-weight:600;display:none}
+.msg.err{display:block;background:#fee2e2;color:var(--err)}.msg.ok{display:block;background:#dcfce7;color:#166534}
+.alt{text-align:center;margin-top:16px;font-size:14px;color:#7a5a3a}.alt a{color:var(--leaf-d);font-weight:700}
+.who{display:flex;align-items:center;gap:16px;margin-bottom:8px}.who img{width:84px;height:84px;border-radius:22px;border:3px solid var(--sun);box-shadow:0 5px 0 var(--sun-d)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+.kv div{background:#fff;border:2px solid #ead3a3;border-radius:14px;padding:12px 14px}.kv small{display:block;color:#9a7a55;font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:800}.kv b{font-size:16px;word-break:break-all;color:var(--ink)}
+.tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:12px;font-weight:800;background:#bbf7d0;color:#166534}.tag.warn{background:#fde68a;color:#92400e}
+.dl{display:flex;gap:22px;align-items:center;background:#fff;border:3px solid var(--sun);border-radius:20px;padding:22px;margin:8px 0}
+.dl img{width:120px;height:120px;border-radius:26px;border:3px solid var(--sun);box-shadow:0 6px 0 var(--sun-d);flex:none;animation:bob 4s ease-in-out infinite}
+.dl h3{font-size:28px;color:var(--wood)}.dl p{color:#6b4a2a;white-space:pre-line;margin:6px 0 14px}
+.dl .btn{margin:0;width:auto}
+.how{margin:22px 0 0;padding-left:22px;color:#6b4a2a}.how li{margin:6px 0}
+.rel{border-top:2px dashed #dbbf8e;padding:14px 0}.rel h3{font-size:20px;color:var(--wood)}.rel p{color:#6b4a2a;white-space:pre-line}
+footer{margin-top:auto;background:#2a180a;border-top:4px solid var(--wood-l);padding:26px 0;color:var(--mu);font-size:14px;text-align:center}
+#upban{position:relative;z-index:40;background:linear-gradient(90deg,#b45309,var(--sun));color:#3b2412;font-weight:800;text-align:center;padding:9px 14px;display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}
+#upban a.btn{box-shadow:0 3px 0 var(--leaf-d)}#upban button{background:0;border:0;font-size:20px;cursor:pointer;color:#3b2412}
+@media(max-width:980px){.grid,.steps{grid-template-columns:repeat(2,1fr)}.shots{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.grid,.steps,.shots{grid-template-columns:1fr}.hero img{height:auto;aspect-ratio:16/9;transform:none;animation:none}.hero:after{display:none}.hero .cta{position:static;padding:22px 4vw;background:var(--night)}.kv{grid-template-columns:1fr}.dl{flex-direction:column;text-align:center}.logo b{font-size:16px}nav a{padding:6px 8px;font-size:13px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js .rv{opacity:1;transform:none}}
+</style><!--/CSS--><script src="js/sound.js" defer></script><script src="js/fx.js" defer></script><title>Télécharger — Campground Builder</title></head><body data-page="download.html" data-inner="1">
+<!--HEADER--><div class="bg"></div>
+<header class="top"><div class="wrap">
+<a class="logo" href="index.html"><img src="img/icon.png" alt=""><b>Campground <i>Builder</i></b></a>
+<nav><a href="index.html">Accueil</a><a href="download.html" class="on">Télécharger</a>
+<span id="nav-auth"><a href="login.html">Se connecter</a><a class="btn sm" href="register.html">Créer un compte</a></span>
+<button id="snd" aria-label="Son" title="Activer l'ambiance sonore">🔇</button></nav></div></header><!--/HEADER-->
+<main><div class="panel wide"><h1>Télécharger le jeu</h1><p class="sub">Application Windows. Tes sauvegardes sont sur ton compte : elles survivent aux mises à jour.</p>
+<div id="last"><div class="dl"><img src="img/icon.png" alt="Campground Builder"><div><h3>Campground Builder</h3><p>Recherche de la dernière version…</p></div></div></div>
+<h2 style="margin:30px 0 4px">Installation</h2>
+<ol class="how"><li>Télécharge et lance l'installateur.</li><li>Windows peut afficher un avertissement SmartScreen : clique sur « Informations complémentaires » puis « Exécuter quand même ».</li><li>Ouvre le jeu, connecte-toi avec le compte du site : ta partie se charge.</li><li>Les prochaines versions se téléchargent toutes seules : tu as juste à cliquer sur « Redémarrer ».</li></ol>
+<h2 style="margin:30px 0 4px">Historique des versions</h2><div id="hist"></div></div></main>
+<!--FOOTER--><footer><div class="wrap">© 2026 Campground Builder — Construisez · Aménagez · Accueillez</div></footer><!--/FOOTER-->
+<script src="js/vendor/supabase.js"></script>
+<script>if(location.protocol==='file:'){addEventListener('DOMContentLoaded',function(){var b=document.createElement('div');b.style.cssText='background:#b3261e;color:#fff;padding:10px;text-align:center;position:relative;z-index:99';b.textContent="Page ouverte depuis un fichier : les comptes ne marchent que sur une adresse web (http://…). Lance npm run site ou publie le site.";document.body.prepend(b)})}</script>
+<script type="module">
+import {renderShell,$,esc,fmtDate,githubReleases} from './js/app.js';
+await renderShell('download.html');
+const mo=n=>n?(n/1048576).toFixed(0)+' Mo':'';
+const box=(inner)=>'<div class="dl"><img src="img/icon.png" alt="Campground Builder"><div>'+inner+'</div></div>';
+const res=await githubReleases();
+if(res.status==='ok'){
+  const l=res.latest;
+  $('#last').innerHTML=box('<span class="tag">Dernière version</span><h3>Campground Builder '+esc(l.version)+'</h3><p>Publiée le '+fmtDate(l.date)+(l.size?' · '+mo(l.size):'')+' · Windows 10/11 (64 bits)</p><p>'+esc(l.notes)+'</p><a class="btn sun big" href="'+esc(l.url)+'">⬇ Télécharger pour Windows</a>');
+  $('#hist').innerHTML=res.all.map(r=>'<div class="rel"><h3>Version '+esc(r.version)+' <span style="color:#9a7a55;font-size:14px;font-weight:400">— '+fmtDate(r.date)+'</span></h3><p>'+esc(r.notes)+'</p></div>').join('');
+}else if(res.status==='none'){
+  $('#last').innerHTML=box('<h3>Première version bientôt disponible</h3><p>Le jeu arrive très bientôt. Crée ton compte en attendant : ta partie sera prête dès la sortie.</p><a class="btn" href="register.html">Créer un compte</a>');
+  $('#hist').innerHTML='<p style="color:#9a7a55">Aucune version publiée pour le moment.</p>';
+}else{
+  $('#last').innerHTML=box('<h3>Téléchargement momentanément indisponible</h3><p>Impossible de contacter GitHub pour le moment. Recharge la page dans quelques minutes.</p>');
+}
+</script></body></html>
