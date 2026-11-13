@@ -1,7 +1,7 @@
 window.CAMPING_CONFIG = {
   "SUPABASE_URL": "https://hxutjvshuzgbgblimgff.supabase.co",
   "SUPABASE_KEY": "sb_publishable_84G-ZuJgcCKii1arlEjXGA_MRJVXSPs",
-  "SITE_URL": "http://localhost:3000",
+  "SITE_URL": "https://nld288711-maker.github.io/CAMPING",
   "GAME_VERSION": "1.0.0",
   "GITHUB_REPO": "nld288711-maker/CAMPING"
 };
