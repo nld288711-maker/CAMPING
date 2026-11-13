@@ -1,0 +1,48 @@
+# Bouton « Publier une nouvelle version » : GitHub > Actions > Publier une nouvelle version > Run workflow.
+# Tu tapes le numéro (ex. 1.0.1) et les nouveautés : tout le reste est automatique.
+name: Publier une nouvelle version
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Numéro de la nouvelle version (ex. 1.0.1)"
+        required: true
+      notes:
+        description: "Nouveautés (texte affiché sur la page Télécharger)"
+        required: false
+        default: ""
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Vérifier le numéro de version
+        shell: bash
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "Numéro invalide : écris par exemple 1.0.1"; exit 1; fi
+          if git ls-remote --tags origin "refs/tags/v${{ inputs.version }}" | grep -q .; then echo "La version v${{ inputs.version }} existe déjà : choisis un numéro plus grand."; exit 1; fi
+      - run: npm ci || npm install
+      - name: Appliquer le numéro de version
+        shell: bash
+        run: |
+          npm version "${{ inputs.version }}" --no-git-tag-version
+          node scripts/sync-version.js
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Version ${{ inputs.version }}" || true
+          git push origin HEAD:main
+      - run: npm run release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Écrire les nouveautés
+        if: ${{ inputs.notes != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTES: ${{ inputs.notes }}
+        run: gh release edit "v${{ inputs.version }}" --repo "${{ github.repository }}" --notes "$NOTES"
