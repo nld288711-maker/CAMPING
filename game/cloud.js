@@ -16,7 +16,7 @@
   var MIGRATIONS = {};
 
   var sb = null, user = null, getState = null, initialRaw = null;
-  var revision = 0, saving = false, pending = false, halted = false, offlineMode = false;
+  var lastErr = null, revision = 0, saving = false, pending = false, halted = false, offlineMode = false;
   var needSync = false, lastSent = '', latestStr = '', timer = null, retry = null, appVersion = CFG.GAME_VERSION;
   var clientId = (function () { try { var k = localStorage.getItem('camping_client_id'); if (!k) { k = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('camping_client_id', k); } return k; } catch (e) { return 'c' + Math.random().toString(36).slice(2); } })();
 
@@ -128,7 +128,14 @@
   }
   function setStatus(k) {
     var e = document.getElementById('ccst'); if (!e) return;
-    e.textContent = k === 'ok' ? '☁️ Synchronisé' : k === 'saving' ? '☁️ Sauvegarde…' : '⚠️ Hors ligne (copie locale)';
+    e.textContent = k === 'ok' ? '☁️ Synchronisé' : k === 'saving' ? '☁️ Sauvegarde…' : '⚠️ Hors ligne (copie locale) — cliquer pour le détail';
+    if (k === 'off') {
+      e.style.cursor = 'pointer';
+      e.onclick = function () {
+        var m = lastErr ? ((lastErr.code ? '[' + lastErr.code + '] ' : '') + (lastErr.message || String(lastErr)) + (lastErr.details ? '\n' + lastErr.details : '') + (lastErr.hint ? '\n' + lastErr.hint : '')) : (navigator.onLine ? 'Aucune erreur enregistrée (en attente de la prochaine tentative).' : 'Pas de connexion Internet.');
+        alert('Raison du mode hors ligne :\n\n' + m + '\n\nTa partie reste enregistrée sur cet ordinateur.');
+      };
+    } else { e.style.cursor = ''; e.onclick = null; }
   }
   function banner(html, actionText, action, href) {
     injectCss(); var b = document.getElementById('ccban');
@@ -161,7 +168,7 @@
     try {
       var r = await sb.from('game_saves').select('save_data,save_version,revision').eq('user_id', user.id).maybeSingle();
       if (r.error) throw r.error; remote = r.data;
-    } catch (e) { failed = true; }
+    } catch (e) { failed = true; lastErr = e; try { console.error('Chargement sauvegarde :', e); } catch (x) {} }
 
     if (failed) {                                    // pas de réseau : copie locale de ce compte
       offlineMode = true; revision = bk ? (bk.baseRevision || 0) : 0;
@@ -217,6 +224,7 @@
       if (latestStr === str) writeBackup(str, false); else writeBackup(latestStr, true);
       setStatus('ok');
     } catch (e) {
+      lastErr = e; try { console.error('Sauvegarde :', e); } catch (x) {}
       setStatus('off'); clearTimeout(retry); retry = setTimeout(function () { push(false); }, 30000);
     } finally {
       saving = false; if (pending) { pending = false; schedule(500); }
