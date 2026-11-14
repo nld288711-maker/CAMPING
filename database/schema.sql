@@ -42,15 +42,17 @@ language sql security definer set search_path = public stable as $$
 $$;
 grant execute on function public.username_available(text) to anon, authenticated;
 
--- ---------- SAUVEGARDES DE JEU ----------
+-- ---------- SAUVEGARDES DE JEU (jusqu'à 4 campings par joueur) ----------
 create table if not exists public.game_saves (
-  user_id uuid primary key references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  slot smallint not null default 1,            -- numéro du camping (1 à 4)
   save_data jsonb not null,
   save_version integer not null default 1,
   revision bigint not null default 1,          -- anti-conflit entre appareils
   game_version text,
   client_id text,
   updated_at timestamptz not null default now(),
+  primary key (user_id, slot),
   -- Une sauvegarde vide ou invalide est refusée par la base elle-même
   constraint save_data_valid check (
     jsonb_typeof(save_data) = 'object'
@@ -59,6 +61,7 @@ create table if not exists public.game_saves (
     and jsonb_typeof(save_data->'buildings') = 'array'
   )
 );
+-- Base créée avant la v1.1.0 (une seule sauvegarde par joueur) : exécute aussi database/migration-multi-camping.sql
 alter table public.game_saves enable row level security;
 
 drop policy if exists "saves_select_own" on public.game_saves;

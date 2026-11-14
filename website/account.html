@@ -115,14 +115,15 @@ if(!user){location.href='login.html';}
 else{
   const [prof,save,rel]=await Promise.all([
     sb.from('profiles').select('username,installed_version').eq('id',user.id).maybeSingle(),
-    sb.from('game_saves').select('updated_at,game_version').eq('user_id',user.id).maybeSingle(),
+    sb.from('game_saves').select('slot,updated_at,game_version').eq('user_id',user.id),
     latestRelease()]);
+  const rows=(save.data||[]);
   const name=(prof.data&&prof.data.username)||(user.user_metadata&&user.user_metadata.username)||user.email;
   const inst=prof.data&&prof.data.installed_version, last=rel.latest&&rel.latest.version;
   $('#hi').textContent='Bienvenue, '+name;
   $('#kv').innerHTML='<div><small>Pseudo</small><b>'+esc(name)+'</b></div><div><small>E-mail</small><b>'+esc(user.email)+'</b></div>'+
   '<div><small>Compte créé le</small><b>'+fmtDate(user.created_at)+'</b></div>'+
-  '<div><small>Sauvegarde en ligne</small><b>'+(save.data?fmtDate(save.data.updated_at):'Aucune pour le moment')+'</b></div>'+
+  '<div><small>Mes campings</small><b>'+(rows.length?rows.length+' / 4 — dernière sauvegarde le '+fmtDate(rows.map(r=>r.updated_at).sort().pop()):'Aucun pour le moment')+'</b></div>'+
   '<div><small>Version installée</small><b>'+(inst?esc(inst):'Inconnue (lance le jeu une fois)')+'</b></div>'+
   '<div><small>Dernière version disponible</small><b>'+(last?esc(last):'—')+'</b></div>';
   if(inst&&last&&cmpVer(last,inst)>0)$('#upd').innerHTML='<span class="tag warn">Mise à jour disponible</span> Le jeu se met à jour tout seul à l\'ouverture, ou télécharge la dernière version. Ta sauvegarde est conservée.';

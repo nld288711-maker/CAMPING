@@ -42,6 +42,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#87ceeb;color:var(--
 .t.beach{background:rgba(250,204,21,.35);border-color:#facc15}
 .t.sel{outline:3px solid #fff}
 .pnj #hud,.pnj #dock,.pnj #bar,.pnj #insp,.pnj #mod,.pnj #toasts{display:none!important}.pnj #exitp{display:block!important}#start{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:linear-gradient(rgba(11,17,32,.3),rgba(11,17,32,.85));text-align:center}#start h1{font-size:36px}#start .btn{font-size:16px;padding:14px 28px}
+#lobfade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:55;transition:opacity .7s ease}
+.lobby #hud,.lobby #dock,.lobby #bar,.lobby #insp,.lobby #mod,.lobby #toasts,.lobby #alertb,.lobby #start,.lobby #exitp{display:none!important}
 #toasts{position:fixed;top:78px;right:14px;display:flex;flex-direction:column;gap:8px;z-index:100}
 .toast{background:var(--bg);border-left:4px solid var(--p);padding:9px 14px;border-radius:6px;font-size:12px;max-width:300px}
 .prog{height:8px;background:#0f172a;border-radius:4px;overflow:hidden;margin:6px 0}.prog i{display:block;height:100%;background:var(--p)}.ok{color:#34d399}.no{color:#f87171}.lock{opacity:.55}
@@ -226,11 +228,20 @@ function newState(){
     buildings:[{t:'reception',x:-12,z:-10,rot:0},{t:'path',x:0,z:6,rot:0},{t:'path',x:0,z:16,rot:0},{t:'tent',x:-5,z:3,rot:0},{t:'tent',x:5,z:3,rot:0},{t:'tent',x:-5,z:9,rot:0},{t:'tent',x:5,z:9,rot:0},{t:'tent',x:-5,z:15,rot:0},{t:'tent',x:5,z:15,rot:0}],
     pricing:{tent:30,caravan:40,mobil:90,chalet:160,lodge:210},debt:0,daily:0,inc:0,exp:0,occ:0,techs:[],research:null,staff:{rec:1,clean:0,mech:0},lost:0};
 }
-let S=newState();
-try{var raw=window.CampingCloud?window.CampingCloud.getInitialRaw():localStorage.getItem(SAVE);if(raw){var L=JSON.parse(raw);if(L&&L.parcels)S=L;}}catch(e){}
+function demoState(){const s=newState();
+  [[1,3],[0,2],[0,4]].forEach(a=>{const p=s.parcels.find(q=>q.r===a[0]&&q.c===a[1]);if(p)p.owned=true;});
+  s.buildings.push({t:'path',x:0,z:26,rot:0},{t:'path',x:0,z:36,rot:0},{t:'tent',x:-5,z:27,rot:0},{t:'tent',x:5,z:27,rot:0},{t:'tent',x:-5,z:33,rot:0},{t:'tent',x:5,z:33,rot:0},
+    {t:'lamp',x:-2.5,z:10,rot:0},{t:'lamp',x:2.5,z:22,rot:0},{t:'lamp',x:-2.5,z:34,rot:0},{t:'oak',x:-13,z:6},{t:'pine',x:13,z:12},{t:'birch',x:-13,z:20},{t:'maple',x:14,z:30},{t:'palm',x:-14,z:38},{t:'spruce',x:-32,z:2},{t:'pine',x:32,z:8},{t:'oak',x:30,z:-10},{t:'birch',x:-30,z:-8});
+  s.staff={rec:1,clean:1,mech:0,gard:0,wait:0,cook:0};return s;}
+let S=newState(),loadedOk=false;
+try{var raw=window.CampingCloud?window.CampingCloud.getInitialRaw():localStorage.getItem(SAVE);if(raw){var L=JSON.parse(raw);if(L&&L.parcels){S=L;loadedOk=true;}}}catch(e){}
+/* SALON D'ACCUEIL : le jeu tourne en simulation jetable (jamais sauvegardée) derrière la liste des campings */
+const LOBBY=!!(window.CampingCloud&&window.CampingCloud.isLobby&&window.CampingCloud.isLobby());
+if(LOBBY&&!loadedOk)S=demoState();
+if(!loadedOk&&!LOBBY&&window.CampingCloud&&window.CampingCloud.getNewName&&window.CampingCloud.getNewName())S.name=window.CampingCloud.getNewName();
 if(!S.staff)S.staff={rec:1,clean:0,mech:0};S.staff.gard=S.staff.gard||0;if(S.lost===undefined)S.lost=0;S.buildings.forEach(b=>{if(b.st==='res')b.st='free';if(b.st==='cleaning')b.st='dirty';b.fx=0;});
 S.paths=S.paths||[];S.ui=S.ui||'auto';if(S.pricing&&!S.pr300){S.pr300=1;for(const k in S.pricing)S.pricing[k]+=300;}S.name=S.name||'Les Flots Bleus';S.hw=S.hw||0;if(S.staff)S.staff.gard=S.staff.gard||0;if(S.ex===undefined)S.ex=0;if(S.staff.wait===undefined){S.staff.wait=0;S.staff.cook=0;}S.lastLoan=S.lastLoan||0;
-function save(){try{if(window.CampingCloud)window.CampingCloud.notify();else localStorage.setItem(SAVE,JSON.stringify(S));}catch(e){}}
+function save(){try{if(LOBBY)return;try{S.stars=starLevel();}catch(e){}if(window.CampingCloud)window.CampingCloud.notify();else localStorage.setItem(SAVE,JSON.stringify(S));}catch(e){}}
 if(window.CampingCloud)window.CampingCloud.attach(function(){return S;});
 
 /* ---------- SCÈNE ---------- */
@@ -563,7 +574,7 @@ cvs.addEventListener('wheel',e=>{radius=Math.max(pnj?3:15,Math.min(pnj?20:320,ra
 cvs.addEventListener('contextmenu',e=>{e.preventDefault();if(mobUI)return;if(placing||pathMode||linkMode)cancelPlacement();});
 const keys={};
 addEventListener('keydown',e=>{
-  if(e.target&&e.target.tagName==='INPUT')return;
+  if(LOBBY||(e.target&&e.target.tagName==='INPUT'))return;
   keys[e.key.toLowerCase()]=true;
   if(e.key==='Escape'){if(pnj)exitPnj();else if(placing||pathMode||linkMode)cancelPlacement();else closeMod();}if(e.key==='Enter'&&pathMode)finishPath(false);
   if(e.key.toLowerCase()==='r')rotatePlacement();if(e.key.toLowerCase()==='n')toggleNet();if(e.key.toLowerCase()==='g')toggleGrid();
@@ -921,7 +932,7 @@ function openMod(k){
     $('mt').textContent='⚙️ Options';
     b.innerHTML='<div class="card" style="gap:10px"><div>Le jeu se sauvegarde automatiquement chaque jour.</div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">Nom du camping : <input id="cn" maxlength="24" value="'+S.name.replace(/"/g,'&quot;')+'" style="user-select:text;-webkit-user-select:text;flex:1;min-width:140px;padding:7px 9px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#f8fafc"><button class="btn" id="cnb">✏️ Renommer</button></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">📱 Affichage : <button class="btn'+(S.ui==='auto'?'':' s')+'" data-ui="auto">Auto</button><button class="btn'+(S.ui==='pc'?'':' s')+'" data-ui="pc">💻 Ordinateur</button><button class="btn'+(S.ui==='mob'?'':' s')+'" data-ui="mob">📱 Mobile</button></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn s" id="stt">🌪️ Déclencher une tempête (test)</button><button class="btn s" id="hwt">🔥 Déclencher une canicule (test)</button></div><button class="btn" id="pv">🚶 Vue PNJ (guider un visiteur)</button><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">Position de l\'entrée : <button class="btn s" data-e="-20">⏪</button><button class="btn s" data-e="-5">◀</button><b id="exv">'+EX+' m</b><button class="btn s" data-e="5">▶</button><button class="btn s" data-e="20">⏩</button></div><button class="btn" id="sv">💾 Sauvegarder maintenant</button><button class="btn r" id="rs">♻️ Recommencer à zéro</button><div style="color:var(--mu)">Contrôles : glisser = tourner • Maj+glisser ou clic droit+glisser = déplacer • molette = zoom • flèches / ZQSD = déplacer • R = pivoter</div></div>';
     $('sv').onclick=()=>{save();toast('Sauvegardé !');};$('cnb').onclick=()=>{const v=$('cn').value.trim().slice(0,24);if(!v){toast('Le nom ne peut pas être vide');return;}S.name=v;drawSign();save();toast('🏷️ Camping renommé : '+v);};$('stt').onclick=()=>{closeMod();startStorm();};$('hwt').onclick=()=>{S.hw=3;closeMod();toast('🔥 Canicule : la pelouse va jaunir, le jardinier doit arroser.');};document.querySelectorAll('[data-ui]').forEach(bt=>bt.onclick=()=>{S.ui=bt.dataset.ui;applyUI();save();document.querySelectorAll('[data-ui]').forEach(o=>o.className='btn'+(o.dataset.ui===S.ui?'':' s'));toast(S.ui==='mob'?'📱 Mode mobile activé':S.ui==='pc'?'💻 Mode ordinateur activé':'🔄 Affichage automatique');});$('cn').onkeydown=e=>{if(e.key==='Enter')$('cnb').click();};$('pv').onclick=enterPnj;b.querySelectorAll('[data-e]').forEach(x=>x.onclick=()=>moveEntrance(+x.dataset.e));
-    $('rs').onclick=()=>{if(confirm('Tout effacer ? Cela supprime AUSSI ta sauvegarde en ligne.')){if(window.CampingCloud){window.CampingCloud.resetSave();return;}try{localStorage.removeItem(SAVE);}catch(e){}location.reload();}};
+    $('rs').onclick=()=>{if(confirm('Effacer ce camping ? Cela supprime AUSSI sa sauvegarde en ligne (tes autres campings ne sont pas touchés).')){if(window.CampingCloud){window.CampingCloud.resetSave();return;}try{localStorage.removeItem(SAVE);}catch(e){}location.reload();}};
   }
 }
 function adjacent(p){return S.parcels.some(q=>q.owned&&Math.abs(q.r-p.r)+Math.abs(q.c-p.c)===1);}
@@ -1383,12 +1394,57 @@ else if(t==='wallbrickdoor'){[-2.05,2.05].forEach(x=>g.add(tb(1.9,1.0,.5,'brick'
 else{g.add(tb(.2,1.9,.2,'plank',-3,.95,0),tb(.2,1.9,.2,'plank',3,.95,0),tb(6.2,.12,.16,'plank',0,1.85,0),tb(6.2,.12,.16,'plank',0,.1,0));for(let i=0;i<14;i++){const s=tb(.07,2,.05,'plank',-2.9+i*.45,.95,.04);s.rotation.z=.6;g.add(s);const s2=tb(.07,2,.05,'plank',-2.9+i*.45,.95,-.04);s2.rotation.z=-.6;g.add(s2);}}
  return g;}
 
+/* ---------- SALON D'ACCUEIL : caméra de cinéma + tempêtes (simulation jetable, JAMAIS sauvegardée) ---------- */
+const lobFade=document.createElement('div');lobFade.id='lobfade';document.body.appendChild(lobFade);
+let shot=null,shotKind='',lobStormT=12,lobCarT=2,lobCleanT=6,lobLeaveT=9,lobWasStorm=false;
+const easeIO=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+function lobbyInit(){S.speed=1;S.hw=0;if(S.time<8||S.time>17)S.time=9+Math.random()*2;S.staff.rec=Math.max(1,S.staff.rec||0);
+  S.buildings.forEach((b,i)=>{if(!def(b.t).acc)return;if(b.cn!==false&&i%2===0){b.st='occ';b.left=2+i%3;}else b.st='free';});}
+function campCenter(){const bs=S.buildings.filter(b=>!WALLK.includes(b.t)&&!TREEK.includes(b.t));if(!bs.length)return{x:EX,z:20};let x=0,z=0;bs.forEach(b=>{x+=b.x;z+=b.z;});return{x:x/bs.length,z:z/bs.length};}
+function mkShot(){
+  const R=Math.random,pick=a=>a[Math.floor(R()*a.length)],acc=S.buildings.filter(b=>def(b.t).acc&&meshes.size);
+  const fall=storm&&treeList.find(g=>g.parent&&g.userData.fall);
+  if(fall&&R()<.8){const g=fall,th=R()*6.28,d=1;return{kind:'tree',dur:6.5,upd:(k)=>{target.set(g.position.x,3,g.position.z);radius=17-3*k;phi=1.22;theta=th+d*k*.7;}};}
+  const kinds=['aerial','entrance','beach'];
+  if(acc.length)kinds.push('tent','tent','tent','pass','pass');
+  if(cars.some(c=>c.m.parent))kinds.push('car','car','car');
+  if(people.some(p=>p.m.visible))kinds.push('person','person');
+  let k;do{k=pick(kinds);}while(k===shotKind&&kinds.length>1);shotKind=k;
+  const cc=campCenter(),th0=R()*6.28,dir=R()<.5?1:-1,dur=8+R()*4;
+  if(k==='tent'){const b=pick(acc),r0=12+R()*5,r1=r0-4,p0=1.18+R()*.12;return{kind:k,dur,upd:(q)=>{const e=easeIO(q);target.set(b.x,1.5+e*.4,b.z);radius=r0+(r1-r0)*e;phi=p0-.1*e;theta=th0+dir*e*1.1;}};}
+  if(k==='pass'){const b=pick(acc),r=9+R()*3;return{kind:k,dur:dur-1.5,upd:(q)=>{target.set(b.x,1.3,b.z);radius=r;phi=1.36;theta=th0+dir*q*1.7;}};}
+  if(k==='car'){const mv=cars.filter(c=>c.m.parent&&c.state!=='parked'),c=pick(mv.length?mv:cars.filter(c=>c.m.parent)),r=8+R()*3;let first=true;
+    return{kind:k,dur:dur+1,upd:(q,dt)=>{if(!c.m.parent||cars.indexOf(c)<0){shot.t=shot.dur;return;}const p=c.m.position;if(first){target.set(p.x,1,p.z);first=false;}else target.lerp(_lv.set(p.x,1,p.z),1-Math.exp(-dt*7));radius=r+3*q;phi=1.28-.1*q;theta=th0+dir*q*1.0;}};}
+  if(k==='person'){const pl=people.filter(p=>p.m.visible),p=pick(pl),r=5.5+R()*2;let first=true;
+    return{kind:k,dur:dur-1,upd:(q,dt)=>{if(!p.m.visible){shot.t=shot.dur;return;}const m=p.m.position;if(first){target.set(m.x,1.2,m.z);first=false;}else target.lerp(_lv.set(m.x,1.2,m.z),1-Math.exp(-dt*7));radius=r;phi=1.3;theta=th0+dir*q*1.2;}};}
+  if(k==='entrance'){return{kind:k,dur,upd:(q)=>{target.set(EX,2.5,-15);radius=32-9*q;phi=1.3;theta=.35+dir*.55*q;}};}
+  if(k==='beach'){return{kind:k,dur,upd:(q)=>{target.set(dir*8,1.8,(ROWS-1)*PS-4);radius=60-12*q;phi=1.33;theta=Math.PI+dir*(.5-.9*q);}};}
+  return{kind:'aerial',dur:dur+2,upd:(q)=>{const e=easeIO(q);target.set(cc.x,0,cc.z);radius=150-50*e;phi=.9-.2*e;theta=th0+dir*e*.9;}};
+}
+const _lv=new THREE.Vector3();
+if(LOBBY)window.__lobbyDbg=()=>({cars:cars.filter(c=>c.m.parent).length,moving:cars.filter(c=>c.state!=='parked').length,people:people.length,storm:!!storm,rain:Math.round(rain*100)/100,shot:shotKind,time:Math.round(S.time*10)/10});
+function lobbyTick(dt){
+  meshes.forEach(m=>{const u=m.userData;if(u.badge)u.badge.visible=false;if(u.nc)u.nc.visible=false;if(u.ci)u.ci.visible=false;if(u.dr)u.dr.visible=false;});borders.visible=false;gridMesh.visible=false;
+  if(!shot){shot=mkShot();lobFade.style.opacity=0;}
+  shot.t=(shot.t||0)+dt;const q=Math.min(1,shot.t/shot.dur);shot.upd(q,dt);updCam();
+  if(shot.t>shot.dur-.7)lobFade.style.opacity=1;
+  if(shot.t>=shot.dur){if(S.time>19.2||S.time<7)S.time=8+Math.random()*2;shot=mkShot();lobFade.style.opacity=0;}
+  // tempêtes simulées en boucle (pluie, éclairs, vent, arbres qui tombent, dépanneuse)
+  lobStormT-=dt;if(lobStormT<=0){if(!storm){startStorm();if(storm)storm.t=30;}lobStormT=55+Math.random()*30;}
+  if(lobWasStorm&&!storm){rainOn=false;wT=90+Math.random()*60;onWeather();}lobWasStorm=!!storm;
+  // circulation : des voitures arrivent et repartent en continu
+  lobCarT-=dt;if(lobCarT<=0){lobCarT=5+Math.random()*5;if(cars.length<5&&S.time>=7.5&&S.time<=20.5)spawnCar();}
+  lobCleanT-=dt;if(lobCleanT<=0){lobCleanT=6;S.buildings.forEach(b=>{if(def(b.t).acc&&b.st==='dirty')b.st='free';});}
+  lobLeaveT-=dt;if(lobLeaveT<=0){lobLeaveT=10+Math.random()*6;const oc=S.buildings.filter(b=>def(b.t).acc&&b.st==='occ'&&cars.some(c=>c.acc===b&&c.state==='parked'));
+    if(oc.length){const b=oc[Math.floor(Math.random()*oc.length)],c=cars.find(q=>q.acc===b&&q.state==='parked');b.st='dirty';if(c)startLeave(c);}}
+}
+
 /* ---------- BOUCLE ---------- */
 const clock=new THREE.Clock();let lastDay=S.day,acc=0;
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.1);
-  panKeys(dt);worldTick(dt);extraTick(dt);pFxTick(dt);
+  panKeys(dt);worldTick(dt);extraTick(dt);pFxTick(dt);if(LOBBY)lobbyTick(dt);
   if(S.speed>0){
     S.time+=dt*S.speed/4;
     if(S.time>=24){S.time-=24;endOfDay();syncPeople();}
@@ -1428,8 +1484,11 @@ function animate(){
   renderRefl();renderer.render(scene,camera);
 }
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+if(LOBBY)lobbyInit();
 syncPeople();refreshHUD();animate();
-if(!localStorage.getItem(SAVE+'_tip'))toast('Bienvenue ! Relie chaque bâtiment à un chemin piéton (sinon il reste inactif). Recherches (🔬) pour débloquer la suite. G = grille 1 m, N = réseaux eau/électricité.');
+if(LOBBY){document.body.classList.add('lobby');$('start').style.display='none';window.CampingCloud.openLobby();}
+else if(window.CampingCloud&&window.CampingCloud.autoEnter&&window.CampingCloud.autoEnter()){$('start').style.display='none';skyDrop();}
+if(!LOBBY&&!localStorage.getItem(SAVE+'_tip'))toast('Bienvenue ! Relie chaque bâtiment à un chemin piéton (sinon il reste inactif). Recherches (🔬) pour débloquer la suite. G = grille 1 m, N = réseaux eau/électricité.');
 }
 </script>
 </body>
