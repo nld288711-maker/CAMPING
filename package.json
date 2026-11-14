@@ -1,7 +1,7 @@
 {
   "name": "camping",
   "productName": "Campground Builder",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "CAMPING — jeu de gestion de camping avec comptes et sauvegardes en ligne",
   "main": "electron/main.js",
   "author": "CAMPING",
