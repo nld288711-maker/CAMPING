@@ -35,6 +35,7 @@
     } catch (e) {} return null;
   }
   function writeBackup(raw, dirty) {
+    if (halted) return;                              // camping supprimé ou arrêté : on ne recrée jamais de copie locale
     try { localStorage.setItem(bkKey(), JSON.stringify({ v: SAVE_VERSION, baseRevision: revision, dirty: !!dirty, savedAt: Date.now(), raw: raw })); if (slot === 1) localStorage.removeItem(bkLegacyKey()); } catch (e) {}
   }
   function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} return null; }
@@ -279,6 +280,7 @@
     if (!sb || !user) throw new Error('Connexion à Internet impossible.');
     if (!listOk || !navigator.onLine) throw new Error('Connexion à Internet impossible : réessaie en ligne pour créer un camping.');
     if (!newStateFn) throw new Error('Le jeu n\'est pas encore prêt, réessaie dans un instant.');
+    try { await listSlots(); } catch (e) { throw new Error('Impossible de lire la liste de tes campings : réessaie.'); }
     if (!hasSlots && slots.length) throw new Error('Mise à jour de la base de données requise pour avoir plusieurs campings (voir database/migration_multi_camping.sql).');
     if (slots.length >= MAX_SLOTS) throw new Error('Maximum ' + MAX_SLOTS + ' campings par compte.');
     var n = 1;
@@ -293,19 +295,27 @@
     if (hasSlots) { row.slot = n; row.meta = metaFromData(state); }
     var r = await sb.from('game_saves').insert(row).select('revision');
     if (r.error) {
-      if (r.error.code === '23505') { try { await listSlots(); } catch (e) {} throw new Error('Cet emplacement est déjà utilisé (autre appareil ?). Réessaie.'); }
+      if (r.error.code === '23505') { try { await listSlots(); } catch (e) {} throw new Error('Cet emplacement était encore occupé. La liste est mise à jour : clique à nouveau sur « Nouveau camping ».'); }
       throw r.error;
     }
     slots.push({ slot: n, revision: 1, updated_at: new Date().toISOString(), meta: metaFromData(state) }); slots.sort(bySlot);
     return n;
   }
   async function deleteCamping(n) {
-    if (!sb || !user || !listOk || !navigator.onLine) throw new Error('Connexion à Internet impossible : réessaie en ligne.');
-    var sl = slots.filter(function (x) { return x.slot === n; })[0]; if (sl && sl.meta && sl.meta.shared) { try { await sb.rpc('leave_shared', { p_id: sl.meta.shared }); } catch (e) {} }
+    if (!sb || !user || !navigator.onLine) throw new Error('Connexion à Internet impossible : réessaie en ligne.');
+    if (n === slot) { halted = true; clearTimeout(timer); clearTimeout(retry); if (pollT) { clearInterval(pollT); pollT = null; } }   // plus aucune sauvegarde automatique sur ce camping
+    var sl = slots.filter(function (x) { return x.slot === n; })[0];
+    if (sl && sl.meta && sl.meta.shared) { try { var lv = await sb.rpc('leave_shared', { p_id: sl.meta.shared }); if (lv.error) console.error('leave_shared :', lv.error); } catch (e) {} }
     var q = sb.from('game_saves').delete().eq('user_id', user.id); if (hasSlots) q = q.eq('slot', n);
-    var r = await q; if (r.error) throw r.error;
-    try { localStorage.removeItem(bkKey(n)); if (n === 1) localStorage.removeItem(bkLegacyKey()); } catch (e) {}
+    var r = await q.select('user_id'); if (r.error) throw r.error;
+    if (!r.data || !r.data.length) {                 // rien n'a été supprimé : le camping existe-t-il encore ?
+      var c = sb.from('game_saves').select('user_id').eq('user_id', user.id); if (hasSlots) c = c.eq('slot', n);
+      var still = await c; if (still.error) throw still.error;
+      if (still.data && still.data.length) throw new Error("La base de données refuse la suppression (droit manquant). Exécute database/migration_correctif_campings.sql dans Supabase > SQL Editor.");
+    }
+    try { localStorage.removeItem(bkKey(n)); if (n === 1) localStorage.removeItem(bkLegacyKey()); if (parseInt(localStorage.getItem(lastKey()), 10) === n) localStorage.removeItem(lastKey()); } catch (e) {}
     slots = slots.filter(function (x) { return x.slot !== n; });
+    try { await listSlots(); } catch (e) {}          // on relit la vérité côté serveur
   }
   function goSlot(n, play) {                           // change de camping (ou y entre) : on recharge proprement
     ss('camping_slot', String(n)); ss('camping_play', play ? '1' : null);
@@ -433,7 +443,10 @@
   async function conflict() {
     var r = await scoped(sb.from(T()).select('save_data,save_version,revision,client_id')).maybeSingle();
     if (r.error) throw r.error;
-    if (!r.data) { revision = 0; schedule(500); return; }                   // la ligne a disparu : on recrée
+    if (!r.data) {                                                           // la ligne a disparu : le camping a été supprimé -> on ne le recrée JAMAIS
+      if (revision > 0) { halted = true; clearTimeout(timer); clearTimeout(retry); try { localStorage.removeItem(bkKey()); } catch (e) {} ss('camping_play', null); ss('camping_slot', null); alert('Ce camping a été supprimé. Retour au salon.'); location.reload(); return; }
+      schedule(500); return;
+    }
     if (r.data.client_id === clientId) { revision = r.data.revision; schedule(300); return; }
     if (shared) { if (!(await applyRemote(r.data))) schedule(2000); return; }
     var d = migrate(r.data.save_data, r.data.save_version || 1);
@@ -506,14 +519,23 @@
     if (code == null) return;
     busy('Connexion au camping…');
     try {
+      await listSlots();
       var j = await sb.rpc('join_shared', { p_code: code.toUpperCase().replace(/\s/g, '') }); if (j.error) throw j.error;
       var id = j.data, ex = slots.filter(function (x) { return x.meta && x.meta.shared === id; })[0];
       if (ex) { fadeGo(ex.slot, false, 'Ouverture…'); return; }
       if (slots.length >= MAX_SLOTS) throw new Error('Maximum ' + MAX_SLOTS + ' campings par compte : supprime-en un avant.');
       var s = await sb.from('shared_campings').select('save_data,save_version,name').eq('id', id).single(); if (s.error) throw s.error;
-      var n = 0; for (var k = 1; !n && k <= MAX_SLOTS; k++) if (!slots.some(function (x) { return x.slot === k; })) n = k;
-      var ins = await sb.from('game_saves').insert({ user_id: user.id, slot: n, save_data: s.data.save_data, save_version: s.data.save_version, game_version: appVersion, client_id: clientId, revision: 1, meta: { name: s.data.name, multi: true, shared: id } });
-      if (ins.error) throw ins.error;
+      var n = 0, ins = null;
+      for (var t = 0; t < 4; t++) {                  // si l'emplacement est pris (collision), on relit la liste et on prend le suivant
+        n = 0; for (var k = 1; !n && k <= MAX_SLOTS; k++) if (!slots.some(function (x) { return x.slot === k; })) n = k;
+        if (!n) throw new Error('Maximum ' + MAX_SLOTS + ' campings par compte : supprime-en un avant.');
+        ins = await sb.from('game_saves').insert({ user_id: user.id, slot: n, save_data: s.data.save_data, save_version: s.data.save_version, game_version: appVersion, client_id: clientId, revision: 1, meta: { name: s.data.name, multi: true, shared: id } });
+        if (!ins.error) break;
+        if (ins.error.code !== '23505') throw ins.error;
+        await listSlots();
+        if (!slots.some(function (x) { return x.slot === n; })) slots.push({ slot: n, revision: 0, updated_at: '', meta: {} });
+      }
+      if (ins.error) throw new Error("Impossible de trouver un emplacement libre. Ferme le jeu, relance-le puis réessaie.");
       fadeGo(n, false, 'Ouverture de « ' + s.data.name + ' »…');
     } catch (e) { unbusy(); alert(e && e.code === 'P0001' ? e.message : (e && e.message && !e.code ? e.message : frErr(e))); }
   }
