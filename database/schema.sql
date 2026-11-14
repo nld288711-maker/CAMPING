@@ -42,26 +42,48 @@ language sql security definer set search_path = public stable as $$
 $$;
 grant execute on function public.username_available(text) to anon, authenticated;
 
--- ---------- SAUVEGARDES DE JEU (jusqu'à 4 campings par joueur) ----------
+-- ---------- SAUVEGARDES DE JEU ----------
 create table if not exists public.game_saves (
   user_id uuid not null references auth.users(id) on delete cascade,
-  slot smallint not null default 1,            -- numéro du camping (1 à 4)
+  slot smallint not null default 1 check (slot between 1 and 4),   -- emplacement du camping (4 par compte)
+  meta jsonb not null default '{}'::jsonb,                          -- résumé affiché dans le salon
   save_data jsonb not null,
   save_version integer not null default 1,
   revision bigint not null default 1,          -- anti-conflit entre appareils
   game_version text,
   client_id text,
   updated_at timestamptz not null default now(),
-  primary key (user_id, slot),
   -- Une sauvegarde vide ou invalide est refusée par la base elle-même
   constraint save_data_valid check (
     jsonb_typeof(save_data) = 'object'
     and jsonb_typeof(save_data->'parcels') = 'array'
     and jsonb_array_length(save_data->'parcels') > 0
     and jsonb_typeof(save_data->'buildings') = 'array'
-  )
+  ),
+  primary key (user_id, slot)
 );
--- Base créée avant la v1.1.0 (une seule sauvegarde par joueur) : exécute aussi database/migration-multi-camping.sql
+-- (base déjà existante) : passage au multi-campings, sans effet sur une base neuve
+alter table public.game_saves add column if not exists slot smallint not null default 1;
+alter table public.game_saves add column if not exists meta jsonb not null default '{}'::jsonb;
+
+-- La clé primaire passe de (user_id) à (user_id, slot)
+do $$
+declare nm text; n int;
+begin
+  select c.conname, array_length(c.conkey, 1) into nm, n
+    from pg_constraint c where c.conrelid = 'public.game_saves'::regclass and c.contype = 'p';
+  if nm is not null and n = 1 then
+    execute format('alter table public.game_saves drop constraint %I', nm);
+    alter table public.game_saves add primary key (user_id, slot);
+  elsif nm is null then
+    alter table public.game_saves add primary key (user_id, slot);
+  end if;
+end $$;
+
+-- 4 emplacements maximum, imposé par la base elle-même
+alter table public.game_saves drop constraint if exists game_saves_slot_range;
+alter table public.game_saves add constraint game_saves_slot_range check (slot between 1 and 4);
+
 alter table public.game_saves enable row level security;
 
 drop policy if exists "saves_select_own" on public.game_saves;
