@@ -17,6 +17,7 @@
 
   var sb = null, user = null, getState = null, initialRaw = null, metaFn = null, newStateFn = null;
   var MAX_SLOTS = 4, slot = 0, slots = [], hasSlots = true, listOk = false, readOnly = false, mode = 'play';
+  var shared = null, remoteHook = null, pollT = null;
   var lastErr = null, revision = 0, saving = false, pending = false, halted = false, offlineMode = false;
   var needSync = false, lastSent = '', latestStr = '', timer = null, retry = null, appVersion = CFG.GAME_VERSION;
   var clientId = (function () { try { var k = localStorage.getItem('camping_client_id'); if (!k) { k = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('camping_client_id', k); } return k; } catch (e) { return 'c' + Math.random().toString(36).slice(2); } })();
@@ -37,7 +38,8 @@
     try { localStorage.setItem(bkKey(), JSON.stringify({ v: SAVE_VERSION, baseRevision: revision, dirty: !!dirty, savedAt: Date.now(), raw: raw })); if (slot === 1) localStorage.removeItem(bkLegacyKey()); } catch (e) {}
   }
   function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} return null; }
-  function scoped(q) { q = q.eq('user_id', user.id); return hasSlots ? q.eq('slot', slot) : q; }   // cible le camping actif
+  function T() { return shared ? 'shared_campings' : 'game_saves'; }
+  function scoped(q) { if (shared) return q.eq('id', shared); q = q.eq('user_id', user.id); return hasSlots ? q.eq('slot', slot) : q; }   // cible le camping actif
   function loadScript(urls) {
     return new Promise(function (res, rej) {
       if (window.supabase && window.supabase.createClient) return res();
@@ -188,7 +190,7 @@
   function metaOf(row) {
     var m = (row.meta && typeof row.meta === 'object' && row.meta.name) ? row.meta : {};
     function pick(a, b) { return a != null ? a : (b != null && b !== '' ? Number(b) : null); }
-    return { name: m.name || row.sn || 'Camping', money: pick(m.money, row.sm), day: pick(m.day, row.sd), month: pick(m.month, row.smo), nb: m.nb != null ? m.nb : null, stars: m.stars != null ? m.stars : null };
+    return { name: m.name || row.sn || 'Camping', money: pick(m.money, row.sm), day: pick(m.day, row.sd), month: pick(m.month, row.smo), nb: m.nb != null ? m.nb : null, stars: m.stars != null ? m.stars : null, shared: m.shared || null };
   }
   async function listSlots() {
     var full = 'slot,meta,revision,updated_at,sn:save_data->>name,sm:save_data->>money,sd:save_data->>day,smo:save_data->>month', tries = [full, 'slot,meta,revision,updated_at'], r = null;
@@ -232,7 +234,7 @@
       var best = slots.slice().sort(function (a, b) { return String(b.updated_at).localeCompare(String(a.updated_at)); })[0];
       want = best ? best.slot : 0;
     }
-    slot = want;
+    slot = want; shared = ((slots.filter(function (x) { return x.slot === slot; })[0] || {}).meta || {}).shared || null;
     mode = (ss('camping_play') === '1' && slot) ? 'play' : 'lobby';
     readOnly = mode === 'lobby';                      // le salon est un décor : jamais de sauvegarde depuis lui
     if (slot) await loadSave(readOnly); else { initialRaw = null; revision = 0; }
@@ -244,7 +246,7 @@
   async function loadSave(quiet) {                    // quiet = salon : aucune boîte de dialogue, aucune écriture
     var bk = readBackup(), remote = null, failed = false;
     try {
-      var r = await scoped(sb.from('game_saves').select('save_data,save_version,revision')).maybeSingle();
+      var r = await scoped(sb.from(T()).select('save_data,save_version,revision')).maybeSingle();
       if (r.error) throw r.error; remote = r.data;
     } catch (e) { failed = true; lastErr = e; try { console.error('Chargement sauvegarde :', e); } catch (x) {} }
 
@@ -324,7 +326,7 @@
       row.appendChild(no); row.appendChild(ok); box.appendChild(row);
       function close(v) { back.remove(); resolve(v); }
       function submit() { var v = inp ? inp.value.trim() : true; if (o.validate) { var m = o.validate(v); if (m) { err.textContent = m; return; } } close(v); }
-      no.onclick = function () { close(null); }; ok.onclick = submit;
+      no.onclick = function () { close(o.noValue !== undefined ? o.noValue : null); }; ok.onclick = submit;
       back.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); else if (e.key === 'Escape') close(null); });
       back.addEventListener('pointerdown', function (e) { if (e.target === back) close(null); });
       document.body.appendChild(back); if (inp) inp.focus();
@@ -336,11 +338,12 @@
   function fmtN(n) { return Math.round(n).toLocaleString('fr-FR'); }
 
   async function onCreate(n) {
+    var mp = await ask({ title: 'Nouveau camping', text: 'Comment veux-tu jouer ?', ok: '👥 Multijoueur', cancel: '🧍 Solo', noValue: 'solo' }); if (mp == null) return;
     var name = await ask({ title: 'Nouveau camping', text: 'Donne un nom à ton camping :', input: { ph: 'Ex. Les Flots Bleus', max: 24 }, ok: 'Créer',
       validate: function (v) { return v.length < 2 ? 'Le nom doit faire au moins 2 caractères.' : ''; } });
     if (name == null) return;
     busy('Création de « ' + name + ' »…');
-    try { var made = await createCamping(name, n); fadeGo(made, false, 'Ouverture de « ' + name + ' »…'); }
+    try { var made = await createCamping(name, n); if (mp === true) { busy('Création du camping multijoueur…'); await makeShared(made); } fadeGo(made, false, 'Ouverture de « ' + name + ' »…'); }
     catch (e) { unbusy(); alert(frErr(e)); }
   }
   async function onDelete(n) {
@@ -382,7 +385,9 @@
   function showLobby() {
     injectCss(); var old = document.getElementById('lb'); if (old) old.remove();
     var root = el('div'); root.id = 'lb';
-    var p = el('div', 'lbp'); p.appendChild(el('div', 'lbt', '🏕️ Camping Manager 3D')); p.appendChild(el('div', 'lbs')); p.appendChild(el('div', 'lbg')); p.appendChild(el('div', 'lbh'));
+    var p = el('div', 'lbp'); p.appendChild(el('div', 'lbt', '🏕️ Camping Manager 3D')); p.appendChild(el('div', 'lbs')); p.appendChild(el('div', 'lbg'));
+    var jb = el('button', '', '🔑 Rejoindre avec un code'); jb.style.cssText = 'display:block;margin:14px auto 0;padding:10px 18px;border-radius:12px;border:1px solid #475569;background:#1e293b;color:#f8fafc;font-weight:700;cursor:pointer'; jb.onclick = joinByCode; p.appendChild(jb);
+    p.appendChild(el('div', 'lbh'));
     root.appendChild(p); root.appendChild(el('div', 'lbcap')); document.body.appendChild(root); renderLobby();
   }
   function caption(t) { var c = document.querySelector('#lb .lbcap'); if (c) c.textContent = t || ''; }
@@ -407,12 +412,13 @@
     saving = true; setStatus('saving');
     try {
       var row = { save_data: JSON.parse(str), save_version: SAVE_VERSION, game_version: appVersion, client_id: clientId, revision: revision + 1 }, res;
-      if (hasSlots) { try { row.meta = metaFn ? metaFn() : {}; } catch (e) { row.meta = {}; } }
+      if (hasSlots && !shared) { try { row.meta = metaFn ? metaFn() : {}; } catch (e) { row.meta = {}; } }
       if (revision === 0) res = await sb.from('game_saves').insert(Object.assign({ user_id: user.id }, hasSlots ? { slot: slot } : {}, row)).select('revision');
-      else res = await scoped(sb.from('game_saves').update(row)).eq('revision', revision).select('revision');
+      else res = await scoped(sb.from(T()).update(row)).eq('revision', revision).select('revision');
       if (res.error) { if (res.error.code === '23505') { await conflict(); return; } throw res.error; }
       if (!res.data || !res.data.length) { await conflict(); return; }
       revision = row.revision; lastSent = str; offlineMode = false;
+      if (shared) { try { var mm = metaFn ? metaFn() : {}; mm.shared = shared; mm.multi = true; sb.from('game_saves').update({ meta: mm }).eq('user_id', user.id).eq('slot', slot).then(function () {}, function () {}); } catch (e) {} }
       if (latestStr === str) writeBackup(str, false); else writeBackup(latestStr, true);
       setStatus('ok');
     } catch (e) {
@@ -424,10 +430,11 @@
   }
 
   async function conflict() {
-    var r = await scoped(sb.from('game_saves').select('save_data,save_version,revision,client_id')).maybeSingle();
+    var r = await scoped(sb.from(T()).select('save_data,save_version,revision,client_id')).maybeSingle();
     if (r.error) throw r.error;
     if (!r.data) { revision = 0; schedule(500); return; }                   // la ligne a disparu : on recrée
     if (r.data.client_id === clientId) { revision = r.data.revision; schedule(300); return; }
+    if (shared) { revision = r.data.revision; var dd = migrate(r.data.save_data, r.data.save_version || 1); if (valid(dd) && remoteHook) { remoteHook(dd); lastSent = snapshot() || lastSent; } return; }
     var d = migrate(r.data.save_data, r.data.save_version || 1);
     if (valid(d) && confirm('Ce camping a été modifié sur un autre appareil.\n\nOK = charger la partie la plus récente (recommandé)\nAnnuler = garder cette partie et écraser l\'autre')) {
       halted = true; try { localStorage.removeItem(bkKey()); } catch (e) {} location.reload(); return;
@@ -482,10 +489,52 @@
     }
   }
 
+  /* ---------- multijoueur (2 joueurs, même camping) ---------- */
+  function genCode() { var a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s = ''; for (var i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)]; return s; }
+  async function makeShared(n) {
+    var g = await sb.from('game_saves').select('save_data,save_version,meta').eq('user_id', user.id).eq('slot', n).single(); if (g.error) throw g.error;
+    for (var i = 0; i < 6; i++) {
+      var r = await sb.from('shared_campings').insert({ code: genCode(), owner: user.id, members: [user.id], name: g.data.save_data.name || 'Camping', save_data: g.data.save_data, save_version: g.data.save_version, revision: 1, client_id: clientId, game_version: appVersion }).select('id').single();
+      if (!r.error) { var u = await sb.from('game_saves').update({ meta: Object.assign({}, g.data.meta, { shared: r.data.id, multi: true }) }).eq('user_id', user.id).eq('slot', n); if (u.error) throw u.error; return; }
+      if (r.error.code !== '23505') throw r.error;
+    }
+    throw new Error('Impossible de générer un code, réessaie.');
+  }
+  async function joinByCode() {
+    var code = await ask({ title: 'Rejoindre un camping', text: 'Entre le code donné par ton ami :', input: { ph: 'Ex. K7M2QX', max: 8 }, ok: 'Rejoindre', validate: function (v) { return v.length < 4 ? 'Code trop court.' : ''; } });
+    if (code == null) return;
+    busy('Connexion au camping…');
+    try {
+      var j = await sb.rpc('join_shared', { p_code: code.toUpperCase().replace(/\s/g, '') }); if (j.error) throw j.error;
+      var id = j.data, ex = slots.filter(function (x) { return x.meta && x.meta.shared === id; })[0];
+      if (ex) { fadeGo(ex.slot, false, 'Ouverture…'); return; }
+      if (slots.length >= MAX_SLOTS) throw new Error('Maximum ' + MAX_SLOTS + ' campings par compte : supprime-en un avant.');
+      var s = await sb.from('shared_campings').select('save_data,save_version,name').eq('id', id).single(); if (s.error) throw s.error;
+      var n = 0; for (var k = 1; !n && k <= MAX_SLOTS; k++) if (!slots.some(function (x) { return x.slot === k; })) n = k;
+      var ins = await sb.from('game_saves').insert({ user_id: user.id, slot: n, save_data: s.data.save_data, save_version: s.data.save_version, game_version: appVersion, client_id: clientId, revision: 1, meta: { name: s.data.name, multi: true, shared: id } });
+      if (ins.error) throw ins.error;
+      fadeGo(n, false, 'Ouverture de « ' + s.data.name + ' »…');
+    } catch (e) { unbusy(); alert(e && e.code === 'P0001' ? e.message : (e && e.message && !e.code ? e.message : frErr(e))); }
+  }
+  function startPoll() {                               // le partenaire a joué ? on récupère son camping toutes les 5 s
+    if (!shared || pollT || mode !== 'play') return;
+    pollT = setInterval(async function () {
+      if (halted || saving || !navigator.onLine) return;
+      try { var r = await sb.from('shared_campings').select('revision,client_id').eq('id', shared).maybeSingle();
+        if (r.data && r.data.revision > revision && r.data.client_id !== clientId) await pullRemote(); } catch (e) {}
+    }, 5000);
+  }
+  async function pullRemote() {
+    var r = await sb.from('shared_campings').select('save_data,save_version,revision').eq('id', shared).maybeSingle();
+    if (r.error || !r.data) return; var d = migrate(r.data.save_data, r.data.save_version || 1); if (!valid(d)) return;
+    revision = r.data.revision; if (remoteHook) { remoteHook(d); lastSent = snapshot() || lastSent; }
+  }
+
   window.CampingCloud = {
     boot: boot, attach: attach, notify: notify, flush: flush, resetSave: resetSave, getInitialRaw: function () { return initialRaw; }, saveVersion: SAVE_VERSION,
     mode: function () { return mode; }, showLobby: showLobby, caption: caption, toLobby: toLobby,
     createCamping: createCamping, deleteCamping: deleteCamping, goSlot: goSlot,
-    getSlots: function () { return slots.slice(); }, currentSlot: function () { return slot; }, maxSlots: MAX_SLOTS
+    getSlots: function () { return slots.slice(); }, isShared: function () { return !!shared; }, onRemote: function (fn) { remoteHook = fn; startPoll(); },
+    shareInfo: async function () { var r = await sb.from('shared_campings').select('code,members').eq('id', shared).single(); if (r.error) throw r.error; return { code: r.data.code, players: r.data.members.length }; }, currentSlot: function () { return slot; }, maxSlots: MAX_SLOTS
   };
 })();
