@@ -124,6 +124,7 @@ loadThree([
 
 function start(){
 const $=id=>document.getElementById(id);
+var WM={}; // cache des textures de murs : doit exister AVANT le chargement d'une sauvegarde contenant des murs
 const SAVE='camping_v8';
 
 /* ---------- DONNÉES ---------- */
@@ -1366,7 +1367,6 @@ function addCleanIcon(m,y){const b=m.userData.b,d=def(b.t),s=new THREE.Sprite(ne
  const r=Math.max(d.w,d.d)/2+1.2,ring=new THREE.Mesh(new THREE.RingGeometry(r-.5,r,40).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xf59e0b,transparent:true,opacity:.75,side:THREE.DoubleSide,depthWrite:false}));ring.position.y=.12;ring.visible=false;ring.raycast=()=>{};m.add(ring);m.userData.dr=ring;}
 function CLEANFX(m,b,t){const u=m.userData,ci=u.ci;if(!ci)return;const dy=b.st==='dirty',cl=b.st==='cleaning';ci.visible=u.dr.visible=dy||cl;if(dy||cl){const s=Math.max(3.4,isz*1.2)*(1+.07*Math.sin(t*5));ci.scale.set(s,s,1);ci.position.y=u.cy+s*.75+Math.abs(Math.sin(t*3))*.5;ci.material.opacity=dy?1:.7;u.dr.material.color.setHex(dy?0xf59e0b:0x84cc16);u.dr.scale.setScalar(1+.05*Math.sin(t*4));}}
 /* --- murs --- */
-var WM={};
 function wTex(k){if(WM[k])return WM[k];const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d'),R=Math.random;
  if(k==='stone'||k==='dark'){const dk=k==='dark';x.fillStyle=dk?'#2d3340':'#6b645c';x.fillRect(0,0,256,128);for(let r=0;r<4;r++){let px=(r%2)*-20;while(px<256){const w=36+R()*34,g=(dk?70:150)+R()*45|0;x.fillStyle='rgb('+g+','+(g+(dk?6:-4))+','+(g+(dk?14:-12))+')';x.fillRect(px+2,r*32+2,w-4,28);for(let n=0;n<14;n++){x.fillStyle='rgba(0,0,0,'+R()*.12+')';x.fillRect(px+2+R()*w,r*32+2+R()*28,2,2);}px+=w;}}}
 else if(k==='brick'){x.fillStyle='#cfc6b8';x.fillRect(0,0,256,128);for(let r=0;r<8;r++){let px=(r%2)*-18;while(px<256){const w=36,rr=150+R()*50|0,gg=60+R()*30|0,bb=45+R()*25|0;x.fillStyle='rgb('+rr+','+gg+','+bb+')';x.fillRect(px+1.5,r*16+1.5,w-3,13);for(let n=0;n<6;n++){x.fillStyle='rgba(0,0,0,'+R()*.12+')';x.fillRect(px+2+R()*(w-5),r*16+2+R()*11,2,1.5);}px+=w;}}}
