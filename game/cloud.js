@@ -301,6 +301,7 @@
   }
   async function deleteCamping(n) {
     if (!sb || !user || !listOk || !navigator.onLine) throw new Error('Connexion à Internet impossible : réessaie en ligne.');
+    var sl = slots.filter(function (x) { return x.slot === n; })[0]; if (sl && sl.meta && sl.meta.shared) { try { await sb.rpc('leave_shared', { p_id: sl.meta.shared }); } catch (e) {} }
     var q = sb.from('game_saves').delete().eq('user_id', user.id); if (hasSlots) q = q.eq('slot', n);
     var r = await q; if (r.error) throw r.error;
     try { localStorage.removeItem(bkKey(n)); if (n === 1) localStorage.removeItem(bkLegacyKey()); } catch (e) {}
@@ -371,7 +372,7 @@
       c.classList.add('on'); var pl = el('button', 'pl', '▶ Jouer');
       pl.onclick = function (e) { e.stopPropagation(); fadeGo(n, true, 'Entrée au camping…'); }; c.appendChild(pl);
     } else c.appendChild(el('div', 'pl2', 'Cliquer pour le voir en arrière-plan'));
-    if (hasSlots) { var d = el('button', 'del', '🗑'); d.title = 'Supprimer ce camping'; d.onclick = function (e) { e.stopPropagation(); onDelete(n); }; c.appendChild(d); }
+    { var d = el('button', 'del', '🗑 Supprimer'); d.title = 'Supprimer ce camping'; d.onclick = function (e) { e.stopPropagation(); onDelete(n); }; c.appendChild(d); }
     c.onclick = function () { if (n === slot) fadeGo(n, true, 'Entrée au camping…'); else fadeGo(n, false, 'Chargement de « ' + (m.name || 'Camping') + ' »…'); };
     return c;
   }
@@ -434,7 +435,7 @@
     if (r.error) throw r.error;
     if (!r.data) { revision = 0; schedule(500); return; }                   // la ligne a disparu : on recrée
     if (r.data.client_id === clientId) { revision = r.data.revision; schedule(300); return; }
-    if (shared) { revision = r.data.revision; var dd = migrate(r.data.save_data, r.data.save_version || 1); if (valid(dd) && remoteHook) { remoteHook(dd); lastSent = snapshot() || lastSent; } return; }
+    if (shared) { if (!(await applyRemote(r.data))) schedule(2000); return; }
     var d = migrate(r.data.save_data, r.data.save_version || 1);
     if (valid(d) && confirm('Ce camping a été modifié sur un autre appareil.\n\nOK = charger la partie la plus récente (recommandé)\nAnnuler = garder cette partie et écraser l\'autre')) {
       halted = true; try { localStorage.removeItem(bkKey()); } catch (e) {} location.reload(); return;
@@ -516,6 +517,14 @@
       fadeGo(n, false, 'Ouverture de « ' + s.data.name + ' »…');
     } catch (e) { unbusy(); alert(e && e.code === 'P0001' ? e.message : (e && e.message && !e.code ? e.message : frErr(e))); }
   }
+  async function applyRemote(row) {                    // fusionne le camping du partenaire avec nos changements ; false = on réessaiera
+    var d = migrate(row.save_data, row.save_version || 1); if (!valid(d)) return true;
+    var keep = remoteHook ? remoteHook(d, lastSent || initialRaw) : false;
+    if (keep === 'defer') return false;
+    revision = row.revision;
+    if (keep) { lastSent = ''; schedule(300); } else lastSent = snapshot() || lastSent;
+    return true;
+  }
   function startPoll() {                               // le partenaire a joué ? on récupère son camping toutes les 5 s
     if (!shared || pollT || mode !== 'play') return;
     pollT = setInterval(async function () {
@@ -526,8 +535,8 @@
   }
   async function pullRemote() {
     var r = await sb.from('shared_campings').select('save_data,save_version,revision').eq('id', shared).maybeSingle();
-    if (r.error || !r.data) return; var d = migrate(r.data.save_data, r.data.save_version || 1); if (!valid(d)) return;
-    revision = r.data.revision; if (remoteHook) { remoteHook(d); lastSent = snapshot() || lastSent; }
+    if (r.error || !r.data) return; await applyRemote(r.data); return;
+    
   }
 
   window.CampingCloud = {

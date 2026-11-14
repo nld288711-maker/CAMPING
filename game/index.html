@@ -237,7 +237,22 @@ function save(){try{if(window.CampingCloud)window.CampingCloud.notify();else loc
 if(window.CampingCloud)window.CampingCloud.attach(function(){return S;},
   function(){return {name:S.name,money:Math.round(S.money),day:S.day,month:S.month,nb:S.buildings.length,stars:starLevel()};},
   function(name){const n=newState();n.name=name;return n;});
-if(window.CampingCloud&&CampingCloud.onRemote)CampingCloud.onRemote(function(d){const keep={speed:S.speed,ui:S.ui,time:S.time};Object.assign(S,d,keep);cars.forEach(c=>scene.remove(c.m));cars.length=0;S.buildings.forEach(b=>{if(b.st==='res')b.st='free';});rebuildAll();syncWorkers();gdirty=true;connectAll();refreshHUD();toast('👥 Ton partenaire a modifié le camping.');});
+if(window.CampingCloud&&CampingCloud.onRemote)CampingCloud.onRemote(function(R,baseStr){
+  if(placing)return 'defer';
+  let B=null;try{B=baseStr?JSON.parse(baseStr):null;}catch(e){}if(!B||!B.buildings)B=R;
+  const bk=b=>b.t+'|'+Math.round(b.x*100)+'|'+Math.round(b.z*100)+'|'+(b.rot||0);
+  const L=new Map(S.buildings.map(b=>[bk(b),b])),Rm=new Map(R.buildings.map(b=>[bk(b),b])),Bs=new Set(B.buildings.map(bk));
+  const out=[];L.forEach((b,k)=>{if(!Bs.has(k)||Rm.has(k))out.push(b);});Rm.forEach((b,k)=>{if(!L.has(k)&&!Bs.has(k))out.push(b);});
+  let keep=false;
+  L.forEach((b,k)=>{if(!Bs.has(k)&&!Rm.has(k))keep=true;});Bs.forEach(k=>{if(!L.has(k)&&Rm.has(k))keep=true;});
+  const ks=new Set(out),same=out.length===S.buildings.length&&S.buildings.every(b=>ks.has(b));
+  let other=false;const skip=['buildings','money','speed','ui','time'];
+  Object.keys(R).forEach(k=>{if(skip.includes(k))return;const l=JSON.stringify(S[k]),b=JSON.stringify(B[k]),r=JSON.stringify(R[k]);if(l===r)return;if(l!==b&&r===b){keep=true;return;}S[k]=R[k];other=true;});
+  const d=S.money-(B.money==null?R.money:B.money);S.money=Math.round(R.money+Math.min(0,d));if(d<0)keep=true;
+  if(!same){S.buildings=out;rebuildAll();gdirty=true;connectAll();}
+  syncWorkers();if(typeof refreshBorders==='function')refreshBorders();refreshHUD();
+  if(!same||other)toast('👥 Ton partenaire a modifié le camping.');
+  return keep;});
 
 /* ---------- SCÈNE ---------- */
 const scene=new THREE.Scene();
