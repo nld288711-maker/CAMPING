@@ -897,8 +897,8 @@ function openMod(k){
     b.querySelectorAll('[data-t]').forEach(x=>x.onclick=()=>{closeMod();startPlacement(def(x.dataset.t));});
   }else if(k==='pricing'){
     $('mt').textContent='🏷️ Tarifs à la nuitée';
-    b.innerHTML='<p style="color:var(--mu);font-size:12px;margin-bottom:12px">Plus c\'est cher, moins il y a de clients. Trouvez le bon équilibre !</p><div class="grid">'+Object.keys(S.pricing).map(t=>'<div class="card"><b>'+def(t).i+' '+def(t).n+'</b><span id="pv-'+t+'" style="color:#34d399;font-weight:700">'+S.pricing[t]+' € / nuit</span><input type="range" min="310" max="'+(PMAX[t]||650)+'" value="'+S.pricing[t]+'" data-t="'+t+'"></div>').join('')+'</div>';
-    b.querySelectorAll('input').forEach(i=>i.oninput=()=>{S.pricing[i.dataset.t]=+i.value;$('pv-'+i.dataset.t).textContent=i.value+' € / nuit';refreshHUD();});
+    b.innerHTML='<p style="color:var(--mu);font-size:12px;margin-bottom:12px">Plus c\'est cher, moins il y a de clients. À partir de 90 % du tarif max, les clients manifestent ! Plus vous avez de loisirs (piscine, tennis…), plus il y a de clients et plus ils tolèrent vos prix.</p><div class="grid">'+Object.keys(S.pricing).map(t=>'<div class="card"><b>'+def(t).i+' '+def(t).n+'</b><span id="pv-'+t+'" style="color:#34d399;font-weight:700">'+S.pricing[t]+' € / nuit</span><input type="range" min="310" max="'+(PMAX[t]||650)+'" value="'+S.pricing[t]+'" data-t="'+t+'"></div>').join('')+'</div>';
+    b.querySelectorAll('input').forEach(i=>i.oninput=()=>{S.pricing[i.dataset.t]=+i.value;$('pv-'+i.dataset.t).textContent=i.value+' € / nuit';$('pv-'+i.dataset.t).style.color=(+i.value>=PMAX[i.dataset.t]*PROT_AT)?'#f87171':'#34d399';refreshHUD();});b.querySelectorAll('input').forEach(i=>i.oninput());
   }else if(k==='bank'){
     var wait=Math.max(0,1800000-(Date.now()-(S.lastLoan||0)));$('mt').textContent='🏦 Banque (1 prêt max / 30 min) — dette actuelle : '+S.debt.toLocaleString('fr-FR')+' €';
     b.innerHTML='<div class="grid">'+LOANS.map((l,i)=>'<div class="card"><b>'+l.n+'</b><div style="font-size:22px;color:#34d399;font-weight:800">'+l.a.toLocaleString('fr-FR')+' €</div><div style="color:var(--mu)">Remboursé à ~3%/jour de la dette + intérêts 15%</div><button class="btn" data-i="'+i+'" '+(wait>0?'disabled':'')+'>'+(wait>0?'⏳ Dans '+Math.ceil(wait/60000)+' min':'Emprunter')+'</button></div>').join('')+'</div>';
@@ -1049,7 +1049,7 @@ function carsTick(sdt){
       const free0=S.buildings.filter(b=>def(b.t).acc&&b.cn!==false&&(!b.st||b.st==='free')),free=free0.filter(b=>carNodeFor(b)>=0),a=free[Math.floor(Math.random()*free.length)];
       if(S.buildings.some(b=>b.t==='reception')&&!S.buildings.some(b=>b.t==='reception'&&b.eo))deny(c,'⚡ Réception sans électricité : un client est reparti !');else if(!(S.staff.rec>0&&S.buildings.some(b=>b.t==='reception')))deny(c,'🚗 Aucun réceptionniste : une famille est repartie !');
       else if(!a)deny(c,free0.length?'🛣️ Aucune route ou chemin ne mène aux emplacements libres : un client est reparti.':'🚗 Camping complet ou logements sales : un client est reparti.');
-      else if(Math.random()>Math.min(1,Math.sqrt(def(a.t).price/(S.pricing[a.t]||def(a.t).price))*1.05))deny(c,'💸 Tarifs trop élevés : un client est reparti.');
+      else if(Math.random()>Math.min(1,Math.sqrt(def(a.t).price*(1+loisirBonus())/(S.pricing[a.t]||def(a.t).price))*1.05))deny(c,'💸 Tarifs trop élevés : un client est reparti.');
       else{a.st='res';c.acc=a;c.park=parkOf(a);c.nights=1+Math.floor(Math.random()*4);c.state='enter';c.path=inPath(a,c.park);c.i=0;toast('🧾 Check-in : '+def(a.t).n+' ('+c.nights+' nuit(s))');}
     }continue;}
     let go=true;
@@ -1071,11 +1071,31 @@ function barTick(dt){
   const nX=cars.some(c=>c.m.position.x<EX&&c.m.position.z>-36&&c.m.position.z<-12&&c.state==='leave');
   [[bars.e,nE,-1],[bars.x,nX,1]].forEach(q=>{const b=q[0],old=b.a,tg=q[1]?1.45:0;b.a+=Math.max(-2.5*dt,Math.min(2.5*dt,tg-b.a));if(old<.05&&b.a>=.05)play(900,.1);if(old>.05&&b.a<=.05)play(500,.1);b.g.rotation.z=q[2]*b.a;});
 }
+// ===== Prix, loisirs & manifestation =====
+const PROT_AT=.9;
+function overpriced(){return Object.keys(PMAX).filter(t=>cnt(t)>0&&(S.pricing[t]||def(t).price)>=PMAX[t]*PROT_AT);}
+function loisirBonus(){return Math.min(.6,funV()*.015);}
+function priceFactor(){const ts=Object.keys(PMAX).filter(t=>cnt(t)>0);if(!ts.length)return 1;const r=ts.reduce((a,t)=>a+(S.pricing[t]||def(t).price)/def(t).price,0)/ts.length;return Math.max(.4,Math.min(1.4,1+(1-r)*.8));}
+const SIGN_T=(function(){const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');x.fillStyle='#fef08a';x.fillRect(0,0,256,128);x.strokeStyle='#dc2626';x.lineWidth=8;x.strokeRect(4,4,248,120);x.fillStyle='#dc2626';x.font='bold 46px sans-serif';x.textAlign='center';x.fillText('TROP',128,58);x.fillText('CHER !',128,108);return new THREE.CanvasTexture(c);})();
+let protesters=[],protestOn=false;
+function protestTick(t){
+  const on=overpriced().length>0;
+  if(on&&!protestOn){toast('✊ Manifestation ! Tarifs trop élevés : les clients protestent à l\'entrée.');play(300,.2);}
+  if(!on&&protestOn)toast('🕊️ Les clients se sont calmés.');
+  protestOn=on;const want=on?6:0;
+  const px=k=>k<3?EX-3-k*2.6:EX+7+(k-3)*2.6;
+  while(protesters.length<want){const k=protesters.length,m=mkHuman();
+    const sign=new THREE.Mesh(new THREE.BoxGeometry(1.3,.65,.05),new THREE.MeshBasicMaterial({map:SIGN_T}));sign.position.set(0,2.1,.2);
+    const stick=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.4,6),new THREE.MeshBasicMaterial({color:0x78350f}));stick.position.set(0,1.5,.2);
+    m.add(sign,stick);m.position.set(px(k),0,-30);m.rotation.y=k<3?Math.PI/2:-Math.PI/2;scene.add(m);protesters.push({m:m,k:k});}
+  while(protesters.length>want){scene.remove(protesters.pop().m);}
+  protesters.forEach(q=>{q.m.position.x=px(q.k);q.m.position.y=Math.abs(Math.sin(t*5+q.k))*.25;});
+}
 function arrivalsTick(){
   if(S.time<8||S.time>20||cars.length>=10)return;
   const fr=S.buildings.filter(b=>def(b.t).acc&&b.cn!==false&&(!b.st||b.st==='free')),free=fr.some(b=>carNodeFor(b)>=0);
 if(fr.length&&!free&&Date.now()-(arrivalsTick.h||0)>60000){arrivalsTick.h=Date.now();toast("🛣️ Les voitures roulent uniquement sur les routes et chemins : reliez l'entrée à vos emplacements.");}
-  if(free&&Math.random()<.35+starLevel()*.08+funV()*.01+matL()*.04)spawnCar();
+  if(free&&Math.random()<(.35+starLevel()*.08+funV()*.01+matL()*.04)*priceFactor()*(1+loisirBonus())*(overpriced().length?.2:1))spawnCar();
 }
 function badgeOf(b){if(b.cn===false)return null;if(RESTO.includes(b.t)&&!restoOk())return 0xf59e0b;
   if(BRK.includes(b.t))return b.br?(b.fx?0xfacc15:0xef4444):null;
@@ -1192,7 +1212,7 @@ function soundTick(){
 function worldTick(dt){
   const sp=S.speed===0?0:Math.min(S.speed,3),d=Math.min(dt,.05);
   if(sp>0){arrT+=d*S.speed/4;if(arrT>=2){arrT=0;arrivalsTick();}carsTick(d*sp);workersTick(d*sp,d*S.speed,clock.elapsedTime);}
-  utilTick(d);barTick(d);badgeTick(clock.elapsedTime);netTick(d,clock.elapsedTime);cT+=d;if(cT>.25){cT=0;if(gdirty){gdirty=false;connectAll();}lampTick();}soundTick();
+  utilTick(d);barTick(d);badgeTick(clock.elapsedTime);protestTick(clock.elapsedTime);netTick(d,clock.elapsedTime);cT+=d;if(cT>.25){cT=0;if(gdirty){gdirty=false;connectAll();}lampTick();}soundTick();
 }
 syncWorkers();
 
