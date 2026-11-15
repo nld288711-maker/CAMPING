@@ -163,6 +163,7 @@ const CAT=[
  {t:'volley',c:'Plage',n:'Terrain beach-volley',i:'🏐',cost:3000,up:3,w:10,d:6,fun:2,beach:1},
  {t:'paillote',c:'Plage',n:'Paillote bar de plage',i:'🍹',cost:12000,up:18,w:8,d:6,fun:3,beach:1},
  {t:'tank',c:'Réseaux',n:"Citerne d'eau (500 L)",i:'💧',cost:3500,up:3,w:4,d:4},
+ {t:'pump',c:'Réseaux',n:'Pompe de filtration (lac)',i:'🌀',cost:50000,up:30,w:3,d:3},
  {t:'transfo',c:'Réseaux',n:'Transformateur (30 kW)',i:'⚡',cost:8000,up:8,w:5,d:4},
  {t:'wind',c:'Réseaux',n:'Éolienne (10 kW)',i:'🌬️',cost:12000,up:4,w:4,d:4},
  {t:'palm',c:'Déco',n:'Palmier',i:'🌴',cost:200,up:0,w:2,d:2},
@@ -190,6 +191,7 @@ const TECHS=[
 {id:'resto2',i:'🍕',n:'Restauration variée',cost:60000,days:6,req:['commerce'],u:['pizzeria','creperie'],d:'Débloque la pizzeria et la crêperie.'},
 {id:'brigade',i:'👨‍🍳',n:'Brigade de cuisine',cost:30000,days:4,req:['commerce'],d:'Permet d\'embaucher serveurs et cuisiniers (obligatoires pour ouvrir un restaurant).'},
 {id:'eau',i:'💧',n:"Gestion de l'eau",cost:2000,days:1,u:['tank'],d:"Débloque les citernes d'eau (500 L)."},
+{id:'entretien',i:'🧽',n:'Métier : Entreteneur',cost:12000,days:3,req:['eau'],d:"Débloque l'Entreteneur : il retire tout seul les poissons morts des lacs."},
 {id:'elec',i:'⚡',n:'Réseau électrique',cost:4000,days:2,u:['transfo'],d:'Débloque les transformateurs.'},
 {id:'eolien',i:'🌬️',n:'Énergie éolienne',cost:20000,days:4,req:['elec'],u:['wind'],d:'Débloque les éoliennes.'},
 {id:'mat3',i:'🏛️',n:'Architecture premium',cost:110000,days:11,req:['mat2'],mat:1,d:'Matériaux haut de gamme (+5% de clients).'},
@@ -197,9 +199,9 @@ const TECHS=[
 ];
 const REQ={};TECHS.forEach(t=>(t.u||[]).forEach(x=>REQ[x]=t.id));
 const BRK=['pool','sanitary','slide','transfo'];const PMAX={tent:500,caravan:750,mobil:1000,chalet:1300,lodge:1600};
-const WU={tent:20,caravan:30,mobil:60,chalet:80,lodge:120,sanitary:100,restaurant:120,pizzeria:90,creperie:70,grocery:30,pool:150,slide:60,paillote:40}; // L/jour
+const WU={tent:20,caravan:30,mobil:60,chalet:80,lodge:120,sanitary:100,restaurant:120,pizzeria:90,creperie:70,grocery:30,pool:150,slide:60,paillote:40,pump:400}; // L/jour
 const EU={tent:.5,caravan:1,mobil:2,chalet:3,lodge:5,reception:3,sanitary:2,restaurant:6,pizzeria:5,creperie:3,grocery:3,pool:6,slide:2,tennis:2,paillote:2,lamp:.2,statue:.3}; // kW
-const TOP={tent:3.6,caravan:3.4,mobil:4.6,chalet:6,lodge:5.5,reception:6,sanitary:3.6,restaurant:5.8,pizzeria:5.6,creperie:5,grocery:3.6,pool:3.5,slide:7,tennis:3,paillote:5,lamp:4.3,statue:6.4};
+const TOP={tent:3.6,caravan:3.4,mobil:4.6,chalet:6,lodge:5.5,reception:6,sanitary:3.6,restaurant:5.8,pizzeria:5.6,creperie:5,grocery:3.6,pool:3.5,slide:7,tennis:3,paillote:5,lamp:4.3,statue:6.4,pump:2.5};
 const PATHS=['path','pathgravel','pathwood'];
 const REQCON=['tent','caravan','mobil','chalet','lodge','pool','slide','sanitary','restaurant','grocery','tennis','playground','paillote','volley','pizzeria','creperie'];
 const RESTO=['restaurant','pizzeria','creperie'];function restoOk(){return (S.staff.wait||0)>0&&(S.staff.cook||0)>0;}
@@ -234,7 +236,7 @@ function newState(){
 let S=newState();
 try{var raw=window.CampingCloud?window.CampingCloud.getInitialRaw():localStorage.getItem(SAVE);if(raw){var L=JSON.parse(raw);if(L&&L.parcels)S=L;}}catch(e){}
 if(!S.staff)S.staff={rec:1,clean:0,mech:0};S.staff.gard=S.staff.gard||0;if(S.lost===undefined)S.lost=0;S.buildings.forEach(b=>{if(b.st==='res')b.st='free';if(b.st==='cleaning')b.st='dirty';b.fx=0;});
-S.paths=S.paths||[];S.ui=S.ui||'auto';if(S.pricing&&!S.pr300){S.pr300=1;for(const k in S.pricing)S.pricing[k]+=300;}S.name=S.name||'Les Flots Bleus';S.hw=S.hw||0;if(S.staff)S.staff.gard=S.staff.gard||0;if(S.ex===undefined)S.ex=0;if(S.staff.wait===undefined){S.staff.wait=0;S.staff.cook=0;}S.lastLoan=S.lastLoan||0;
+S.paths=S.paths||[];S.ui=S.ui||'auto';if(S.pricing&&!S.pr300){S.pr300=1;for(const k in S.pricing)S.pricing[k]+=300;}S.name=S.name||'Les Flots Bleus';S.hw=S.hw||0;if(S.staff)S.staff.gard=S.staff.gard||0;if(S.ex===undefined)S.ex=0;if(S.staff.wait===undefined){S.staff.wait=0;S.staff.cook=0;}S.lastLoan=S.lastLoan||0;S.fish=S.fish||[];S.staff.ent=S.staff.ent||0;
 function save(){try{if(window.CampingCloud)window.CampingCloud.notify();else localStorage.setItem(SAVE,JSON.stringify(S));}catch(e){}}
 if(window.CampingCloud)window.CampingCloud.attach(function(){return S;},
   function(){return {name:S.name,money:Math.round(S.money),day:S.day,month:S.month,nb:S.buildings.length,stars:starLevel()};},
@@ -252,6 +254,7 @@ if(window.CampingCloud&&CampingCloud.onRemote)CampingCloud.onRemote(function(R,b
   Object.keys(R).forEach(k=>{if(skip.includes(k))return;const l=JSON.stringify(S[k]),b=JSON.stringify(B[k]),r=JSON.stringify(R[k]);if(l===r)return;if(l!==b&&r===b){keep=true;return;}S[k]=R[k];other=true;});
   const d=S.money-(B.money==null?R.money:B.money);S.money=Math.round(R.money+Math.min(0,d));if(d<0)keep=true;
   if(!same){S.buildings=out;rebuildAll();gdirty=true;connectAll();}
+  if(typeof terrainReload==='function'){terrainReload();fishSync();followY();}
   syncWorkers();if(typeof refreshBorders==='function')refreshBorders();refreshHUD();
   if(!same||other)toast('👥 Ton partenaire a modifié le camping.');
   return keep;});
@@ -276,7 +279,133 @@ const cone=(r,h,col,x,y,z,seg,ry)=>{const g=new THREE.ConeGeometry(r,h,seg||8);i
 function plane(w,d,col,x,y,z){const g=new THREE.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);const o=new THREE.Mesh(g,M(col));o.position.set(x,y,z);return o;}
 
 // Terrain : herbe, plage, mer
-{const gp=plane(900,900,0x5cc85c,0,0,160);gp.receiveShadow=true;scene.add(gp);}
+{const sh=new THREE.Shape();sh.moveTo(-450,-610);sh.lineTo(450,-610);sh.lineTo(450,290);sh.lineTo(-450,290);sh.closePath();
+ const hole=new THREE.Path();hole.moveTo(-140,-300);hole.lineTo(-140,20);hole.lineTo(140,20);hole.lineTo(140,-300);hole.closePath();sh.holes.push(hole);
+ const gg=new THREE.ShapeGeometry(sh);gg.rotateX(-Math.PI/2);const gp=new THREE.Mesh(gg,M(0x5cc85c));gp.receiveShadow=true;scene.add(gp);}
+/* ================= TERRAIN MODELABLE : pinceau, lacs, eau, algues ================= */
+const TCS=1.25,TX0=-140,TZ0=-20,TNX=224,TNZ=256,TW1=TNX+1,NV=TW1*(TNZ+1),HMIN=-6,HMAX=12;
+const TH=new Float32Array(NV),TW=new Float32Array(NV).fill(-99),TA=new Float32Array(NV);
+let brushOn=false,fishMode=null,terrainSig='',selLake=null,lakes=[],tDirty=null,wDirty=false;
+const LK=new Int16Array(NV).fill(-1);
+const wetV=k=>TW[k]>-90&&TH[k]<TW[k]-.001;
+function heightAt(x,z){const fx=(x-TX0)/TCS,fz=(z-TZ0)/TCS;if(fx<=0||fz<=0||fx>=TNX||fz>=TNZ)return 0;const i=fx|0,j=fz|0,u=fx-i,v=fz-j,k=j*TW1+i;
+  return (TH[k]*(1-u)+TH[k+1]*u)*(1-v)+(TH[k+TW1]*(1-u)+TH[k+TW1+1]*u)*v;}
+function waterLevelAt(x,z){const fx=(x-TX0)/TCS,fz=(z-TZ0)/TCS;if(fx<0||fz<0||fx>TNX||fz>TNZ)return NaN;
+  const i=Math.min(TNX-1,fx|0),j=Math.min(TNZ-1,fz|0),k=j*TW1+i;let L=NaN;
+  [k,k+1,k+TW1,k+TW1+1].forEach(q=>{if(wetV(q))L=TW[q];});
+  if(isNaN(L))return NaN;return heightAt(x,z)<L-.02?L:NaN;}
+function lakeAtPoint(x,z){const fx=(x-TX0)/TCS,fz=(z-TZ0)/TCS;if(fx<0||fz<0||fx>TNX||fz>TNZ)return null;
+  const i=Math.min(TNX-1,fx|0),j=Math.min(TNZ-1,fz|0),k=j*TW1+i;
+  for(const q of [k,k+1,k+TW1,k+TW1+1]){if(LK[q]>=0&&lakes[LK[q]])return lakes[LK[q]];}return null;}
+/* --- maillage du sol --- */
+const tGeo=new THREE.BufferGeometry(),tPos=new Float32Array(NV*3),tCol=new Float32Array(NV*3),tNor=new Float32Array(NV*3);
+{const idx=new Uint16Array(TNX*TNZ*6);let n=0;
+ for(let j=0;j<=TNZ;j++)for(let i=0;i<=TNX;i++){const k=j*TW1+i;tPos[k*3]=TX0+i*TCS;tPos[k*3+2]=TZ0+j*TCS;tNor[k*3+1]=1;tCol[k*3]=.36;tCol[k*3+1]=.78;tCol[k*3+2]=.36;}
+ for(let j=0;j<TNZ;j++)for(let i=0;i<TNX;i++){const a=j*TW1+i,b=a+1,c=a+TW1,d=c+1;idx[n++]=a;idx[n++]=c;idx[n++]=b;idx[n++]=b;idx[n++]=c;idx[n++]=d;}
+ tGeo.setAttribute('position',new THREE.BufferAttribute(tPos,3));tGeo.setAttribute('normal',new THREE.BufferAttribute(tNor,3));tGeo.setAttribute('color',new THREE.BufferAttribute(tCol,3));tGeo.setIndex(new THREE.BufferAttribute(idx,1));}
+const tMesh=new THREE.Mesh(tGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,metalness:0}));tMesh.receiveShadow=true;tMesh.frustumCulled=false;scene.add(tMesh);
+const _c1=new THREE.Color(),_c2=new THREE.Color(),_c3=new THREE.Color(),
+  C_GRASS=new THREE.Color(0x5cc85c),C_HILL=new THREE.Color(0x3f9a45),C_EARTH=new THREE.Color(0x6a4322),C_DEEP=new THREE.Color(0x35230f),C_ROCK=new THREE.Color(0x8d8f88),C_SNOW=new THREE.Color(0xe8eef0);
+function tVert(i,j){const k=j*TW1+i,h=TH[k];tPos[k*3+1]=h;
+  const hl=TH[j*TW1+Math.max(0,i-1)],hr=TH[j*TW1+Math.min(TNX,i+1)],hu=TH[Math.max(0,j-1)*TW1+i],hd=TH[Math.min(TNZ,j+1)*TW1+i];
+  const nx=(hl-hr)/(2*TCS),nz=(hu-hd)/(2*TCS),l=Math.hypot(nx,1,nz);tNor[k*3]=nx/l;tNor[k*3+1]=1/l;tNor[k*3+2]=nz/l;
+  const sl=Math.hypot(nx,nz),c=_c1;
+  if(h<-.03){const t=Math.min(1,-h/.35);c.copy(C_GRASS).lerp(C_EARTH,t);c.lerp(C_DEEP,Math.min(1,Math.max(0,(-h-.4)/4))*.75);}
+  else if(h>.03){c.copy(C_GRASS).lerp(C_HILL,Math.min(1,h/1.5)*.7);c.lerp(C_ROCK,Math.min(1,Math.max(0,(h-4.5)/5)));c.lerp(C_SNOW,Math.min(1,Math.max(0,(h-10.4)/1.6)));if(sl>.8)c.lerp(C_ROCK,Math.min(.8,(sl-.8)*1.1));}
+  else c.copy(C_GRASS);
+  tCol[k*3]=c.r;tCol[k*3+1]=c.g;tCol[k*3+2]=c.b;}
+function tMark(i0,i1,j0,j1){if(!tDirty)tDirty={i0:i0,i1:i1,j0:j0,j1:j1};else{tDirty.i0=Math.min(tDirty.i0,i0);tDirty.i1=Math.max(tDirty.i1,i1);tDirty.j0=Math.min(tDirty.j0,j0);tDirty.j1=Math.max(tDirty.j1,j1);}}
+function tRefresh(d){const i0=Math.max(0,d.i0-1),i1=Math.min(TNX,d.i1+1),j0=Math.max(0,d.j0-1),j1=Math.min(TNZ,d.j1+1);
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)tVert(i,j);
+  tGeo.attributes.position.needsUpdate=true;tGeo.attributes.normal.needsUpdate=true;tGeo.attributes.color.needsUpdate=true;
+  let mx=0;for(let k=0;k<NV;k+=7)if(TH[k]>mx)mx=TH[k];
+  if(mx>1.2&&!tMesh.castShadow){tMesh.castShadow=true;sun.shadow.bias=-.0004;sun.shadow.normalBias=.35;}else if(mx<=1.2)tMesh.castShadow=false;}
+function tRefreshAll(){tDirty=null;tRefresh({i0:0,i1:TNX,j0:0,j1:TNZ});}
+tRefreshAll();
+/* --- eau --- */
+const lkTex=(function(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#d9eef4';x.fillRect(0,0,128,128);
+  for(let i=0;i<70;i++){x.strokeStyle=i%2?'rgba(255,255,255,.55)':'rgba(120,180,200,.35)';x.lineWidth=1+Math.random()*2;const px=Math.random()*128,py=Math.random()*128;x.beginPath();x.moveTo(px,py);x.quadraticCurveTo(px+10,py-6,px+24,py);x.stroke();}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;})();
+const waterMesh=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({vertexColors:true,map:lkTex,transparent:true,opacity:.72,roughness:.12,metalness:.05}));
+waterMesh.frustumCulled=false;waterMesh.renderOrder=1;waterMesh.receiveShadow=true;scene.add(waterMesh);
+function waterRebuild(){const P=[],C=[],UV=[],I=[];let n=0;
+  for(let j=0;j<TNZ;j++)for(let i=0;i<TNX;i++){const k=j*TW1+i,q=[k,k+1,k+TW1,k+TW1+1];let L=-99,A=0;
+    for(const v of q){if(wetV(v)){if(TW[v]>L)L=TW[v];if(TA[v]>A)A=TA[v];}}
+    if(L<-90)continue;const x0=TX0+i*TCS,z0=TZ0+j*TCS;
+    for(let m=0;m<4;m++){const x=x0+(m&1)*TCS,z=z0+(m>>1)*TCS,v=q[m];P.push(x,L,z);UV.push(x/10,z/10);
+      const d=Math.max(0,L-TH[v]);_c2.set(0x7fd6e6).lerp(_c3.set(0x0a5a86),Math.min(1,d/3));_c2.lerp(_c3.set(0x58791c),A*.9);_c3.setRGB(tCol[v*3],tCol[v*3+1],tCol[v*3+2]);_c2.lerp(_c3,1-Math.min(1,d/.45));C.push(_c2.r,_c2.g,_c2.b);}
+    I.push(n,n+2,n+1,n+1,n+2,n+3);n+=4;}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));
+  g.setIndex(n>16000?new THREE.Uint32BufferAttribute(I,1):new THREE.Uint16BufferAttribute(I,1));g.computeVertexNormals();
+  const old=waterMesh.geometry;waterMesh.geometry=g;old.dispose();waterMesh.visible=n>0;}
+/* --- lacs : analyse des plans d'eau connectés --- */
+function analyzeLakes(){LK.fill(-1);lakes=[];const st=[];
+  for(let k=0;k<NV;k++){if(LK[k]>=0||!wetV(k))continue;
+    const L={id:lakes.length,key:k,n:0,sx:0,sz:0,level:TW[k],maxD:0,alg:0,pumps:[],fish:[],dead:0,slots:0,pumpOk:false,vs:[]};lakes.push(L);st.push(k);LK[k]=L.id;
+    while(st.length){const v=st.pop(),i=v%TW1,j=(v/TW1)|0;L.vs.push(v);L.n++;L.sx+=i;L.sz+=j;L.alg+=TA[v];L.maxD=Math.max(L.maxD,TW[v]-TH[v]);
+      if(i>0)nb(v-1);if(i<TNX)nb(v+1);if(j>0)nb(v-TW1);if(j<TNZ)nb(v+TW1);}
+    function nb(q){if(LK[q]<0&&wetV(q)&&Math.abs(TW[q]-L.level)<.05){LK[q]=L.id;st.push(q);}}
+    L.alg/=L.n;L.cx=TX0+L.sx/L.n*TCS;L.cz=TZ0+L.sz/L.n*TCS;L.area=L.n*TCS*TCS;}
+  S.buildings.forEach(b=>{if(b.t==='pump'){const l=lakeAtPoint(b.x,b.z);if(l)l.pumps.push(b);}});
+  lakes.forEach(l=>{l.pumpOk=l.pumps.some(p=>p.wo&&!p.br);});
+  S.fish.forEach(f=>{const l=lakeAtPoint(f.x,f.z);if(l){l.fish.push(f);if(f.d)l.dead++;else l.slots+=FISH[f.s].slots;}});}
+/* --- niveau de débordement (min-max jusqu'au bord) --- */
+const spBest=new Float32Array(NV);
+function spillLevel(starts,lv0){spBest.fill(1e9);const hk=[],hv=[];
+  const push=(k,v)=>{hk.push(k);hv.push(v);let i=hk.length-1;while(i>0){const p=(i-1)>>1;if(hk[p]<=hk[i])break;let a=hk[p];hk[p]=hk[i];hk[i]=a;a=hv[p];hv[p]=hv[i];hv[i]=a;i=p;}};
+  const pop=()=>{const k=hk[0],v=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){hk[0]=lk;hv[0]=lv;let i=0;const n=hk.length;for(;;){const l=2*i+1,r=l+1;let m=i;if(l<n&&hk[l]<hk[m])m=l;if(r<n&&hk[r]<hk[m])m=r;if(m===i)break;let a=hk[m];hk[m]=hk[i];hk[i]=a;a=hv[m];hv[m]=hv[i];hv[i]=a;i=m;}}return [k,v];};
+  starts.forEach(v=>{spBest[v]=lv0;push(lv0,v);});
+  while(hk.length){const e=pop(),key=e[0],v=e[1];if(key>spBest[v])continue;const i=v%TW1,j=(v/TW1)|0;if(i===0||j===0||i===TNX||j===TNZ)return key;
+    const nbs=[v-1,v+1,v-TW1,v+TW1];for(const q of nbs){const nk=Math.max(key,TH[q]);if(nk<spBest[q]){spBest[q]=nk;push(nk,q);}}}
+  return 1e9;}
+function floodFrom(starts,level,alg){const st=[],seen=new Uint8Array(NV);let c=0;starts.forEach(v=>{seen[v]=1;st.push(v);});
+  while(st.length){const v=st.pop(),i=v%TW1,j=(v/TW1)|0;TW[v]=level;if(!(TA[v]>0)||alg===0)TA[v]=alg;c++;
+    const nbs=[];if(i>1)nbs.push(v-1);if(i<TNX-1)nbs.push(v+1);if(j>1)nbs.push(v-TW1);if(j<TNZ-1)nbs.push(v+TW1);
+    for(const q of nbs){if(!seen[q]&&TH[q]<level-.001){seen[q]=1;st.push(q);}}}return c;}
+function fixWater(){ // après une modification : le niveau ne peut pas dépasser le bord, les creux voisins plus bas se remplissent
+  analyzeLakes();
+  lakes.forEach(l=>{const sp=spillLevel(l.vs,l.level);let nl=Math.min(l.level,sp-.1);if(sp>1e8)nl=l.level;
+    l.vs.forEach(v=>{TW[v]=nl;});floodFrom(l.vs,nl,l.alg);});
+  for(let k=0;k<NV;k++)if(TW[k]>-90&&!wetV(k)){TW[k]=-99;TA[k]=0;}else if(TW[k]<-90)TA[k]=0;
+  analyzeLakes();waterRebuild();wDirty=false;}
+function fillAt(x,z){const i=Math.round((x-TX0)/TCS),j=Math.round((z-TZ0)/TCS);if(i<2||j<2||i>TNX-2||j>TNZ-2){toast('Hors du terrain modifiable');return false;}
+  const k=j*TW1+i;if(wetV(k)){toast('💧 Il y a déjà de l’eau ici');return false;}
+  const sp=spillLevel([k],TH[k]),lv=sp-.1;if(!(lv>TH[k]+.05)||sp>1e8){toast('💧 Pas de creux ici : creusez d’abord un trou (l’eau remplit jusqu’au bord)');return false;}
+  const n=floodFrom([k],lv,0);fixWater();toast('💧 Lac rempli ('+Math.round(n*TCS*TCS)+' m²). Posez une pompe pour garder l’eau propre !');return true;}
+function drainAt(x,z){analyzeLakes();const l=lakeAtPoint(x,z);if(!l){toast('🚰 Cliquez sur un lac pour le vider');return false;}
+  const st=[l.vs[0]],seen=new Uint8Array(NV);seen[l.vs[0]]=1;
+  while(st.length){const v=st.pop(),i=v%TW1,j=(v/TW1)|0;TW[v]=-99;TA[v]=0;[i>0?v-1:-1,i<TNX?v+1:-1,j>0?v-TW1:-1,j<TNZ?v+TW1:-1].forEach(q=>{if(q>=0&&!seen[q]&&TW[q]>-90&&Math.abs(TW[q]-l.level)<.05){seen[q]=1;st.push(q);}});}
+  fixWater();toast('🚰 Lac vidé');return true;}
+/* --- sauvegarde compressée (RLE + base64) --- */
+function rleEnc(arr,sc,isW){const out=[];let prev=null,run=0;
+  for(let k=0;k<arr.length;k++){let v=(isW&&arr[k]<-90)?-128:Math.max(-127,Math.min(127,Math.round(arr[k]*sc)));if(v===prev&&run<255)run++;else{if(run)out.push(prev&255,run);prev=v;run=1;}}
+  if(run)out.push(prev&255,run);let s='';for(let i=0;i<out.length;i+=8192)s+=String.fromCharCode.apply(null,out.slice(i,i+8192));return btoa(s);}
+function rleDec(str,sc,arr,isW){const s=atob(str);let k=0;for(let i=0;i+1<s.length&&k<arr.length;i+=2){let v=s.charCodeAt(i);if(v>127)v-=256;const r=s.charCodeAt(i+1),val=(isW&&v===-128)?-99:v/sc;for(let q=0;q<r&&k<arr.length;q++)arr[k++]=val;}}
+function saveTerrain(){let any=false;for(let k=0;k<NV;k++)if(TH[k]!==0||TW[k]>-90){any=true;break;}
+  S.terrain=any?{h:rleEnc(TH,10),w:rleEnc(TW,10,true),a:rleEnc(TA,100)}:null;terrainSig=S.terrain?S.terrain.h+'|'+S.terrain.w+'|'+S.terrain.a:'';}
+function terrainReload(){const T=S.terrain,sig=T?T.h+'|'+T.w+'|'+T.a:'';if(sig===terrainSig)return;terrainSig=sig;TH.fill(0);TW.fill(-99);TA.fill(0);
+  try{if(T){rleDec(T.h,10,TH);rleDec(T.w,10,TW,true);rleDec(T.a,100,TA);}}catch(e){TH.fill(0);TW.fill(-99);TA.fill(0);}
+  tRefreshAll();analyzeLakes();waterRebuild();}
+S.fish=S.fish||[];
+function bY(b){const t=b.t;if(t==='pump'){const L=waterLevelAt(b.x,b.z);return isNaN(L)?-.1:L;}if(TREEK.includes(t)||t==='lamp'||WALLK.includes(t))return heightAt(b.x,b.z);return 0;}
+const FOLLOW=t=>TREEK.includes(t)||t==='lamp'||WALLK.includes(t);
+function pickGround(surf){ray.setFromCamera(mouse,camera);const o=ray.ray.origin,d=ray.ray.direction;
+  const top=(x,z)=>{const g=heightAt(x,z);if(surf){const L=waterLevelAt(x,z);if(!isNaN(L))return Math.max(g,L);}return g;};
+  for(let t=0;t<1500;t+=1.5){const y=o.y+d.y*t,x=o.x+d.x*t,z=o.z+d.z*t;
+    if(y<=top(x,z)){let a=Math.max(0,t-1.5),b=t;for(let n=0;n<9;n++){const m=(a+b)/2;if(o.y+d.y*m<=top(o.x+d.x*m,o.z+d.z*m))b=m;else a=m;}
+      const px=o.x+d.x*b,pz=o.z+d.z*b;return [{point:new THREE.Vector3(px,top(px,pz),pz)}];}}
+  return [];}
+const FISH=[
+{n:'Poisson rouge',i:'🐠',cost:500,L:.35,slots:1,bonus:.003,sz:'Petit',c:0xff6a1a,f:0xff9a4a},
+{n:'Gardon argenté',i:'🐟',cost:1200,L:.5,slots:1,bonus:.006,sz:'Petit',c:0xb9c6cf,f:0xd9534f},
+{n:'Tanche dorée',i:'🐟',cost:3000,L:.7,slots:1,bonus:.01,sz:'Petit',c:0xc9a227,f:0x8a6d12},
+{n:'Carpe koï',i:'🎏',cost:8000,L:1,slots:1,bonus:.02,sz:'Moyen',c:0xf4f1ea,f:0xf26a1b,koi:1},
+{n:'Truite arc-en-ciel',i:'🐟',cost:15000,L:1.1,slots:1,bonus:.03,sz:'Moyen',c:0x9db28f,f:0xe46d8c},
+{n:'Carpe miroir géante',i:'🐡',cost:30000,L:1.5,slots:2,bonus:.045,sz:'Gros',c:0xc6a24a,f:0x8b6b2a},
+{n:'Esturgeon',i:'🦈',cost:60000,L:2.1,slots:3,bonus:.07,sz:'Géant',c:0x56626d,f:0x3b444c,slim:.7,snout:1},
+{n:'Arowana doré',i:'🐉',cost:100000,L:1.8,slots:3,bonus:.1,sz:'Géant',c:0xe8b73a,f:0xf3d27a,metal:1,slim:.8}];
+terrainReload();
+
 {const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#f1d9a5';x.fillRect(0,0,128,128);for(let i=0;i<1600;i++){x.fillStyle='rgba('+(170+Math.random()*80|0)+','+(130+Math.random()*80|0)+',80,.28)';x.fillRect(Math.random()*128,Math.random()*128,2,2);}const tx=new THREE.CanvasTexture(c);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(36,5);const bp=plane(COLS*PS,PS,0xffffff,0,0.03,(ROWS-1)*PS);bp.material=new THREE.MeshStandardMaterial({map:tx,roughness:1});bp.receiveShadow=true;scene.add(bp);}           // plage (ligne 6)
 const sea=new THREE.Mesh(new THREE.PlaneGeometry(700,300,70,24).rotateX(-Math.PI/2),M(0x0891b2));sea.position.set(0,0.2,(ROWS-1)*PS+PS/2+150);scene.add(sea);     // mer
 scene.add(plane(COLS*PS,6,0xffffff,0,0.06,(ROWS-1)*PS+PS/2+1));     // écume
@@ -335,6 +464,13 @@ function tbl(g,x,z,col){g.add(cyl(.55,.55,.06,0xf8fafc,x,.8,z,12),cyl(.05,.05,.8
 function make(t){
   const L=matL(),g=new THREE.Group(),H=Math.PI/2;
   switch(t){
+  case 'pump':{
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.5,.28,8,22).rotateX(Math.PI/2),M(0xfacc15));ring.position.y=.05;
+    const rot=new THREE.Group();rot.position.y=-.25;for(let i=0;i<3;i++){const bl=box(1.9,.05,.26,0x94a3b8,0,0,0);bl.rotation.y=i*Math.PI/3;rot.add(bl);}
+    const led=new THREE.Mesh(new THREE.SphereGeometry(.2,8,6),new THREE.MeshBasicMaterial({color:0x22c55e}));led.position.set(0,2.45,0);
+    const jet=new THREE.Mesh(new THREE.ConeGeometry(.4,1.4,8),new THREE.MeshBasicMaterial({color:0x9bdcf5,transparent:true,opacity:.7}));jet.position.set(.9,2.7,0);
+    g.add(ring,cyl(1.1,1.2,.5,0x64748b,0,.25,0,16),cyl(.7,.7,1.6,0x2563eb,0,1.25,0,14),cyl(.76,.76,.15,0x1e3a8a,0,2.1,0,14),cyl(.12,.12,1.2,0x94a3b8,.9,1.7,0,6),rot,led,jet);
+    g.userData.rot=rot;g.userData.pled=led;g.userData.jet=jet;break;}
   case 'tent':{
     const col=[0x2563eb,0x16a34a,0xea580c,0x7c3aed][L];
     g.add(box(6,.05,6,0x92400e,0,.03,0),gable(3.6,2,4.4,col,0,.05,-.3),gable(1.6,1.3,.1,0x0f172a,0,.06,1.95),box(.5,.5,.5,0x854d0e,-2,.3,2.2));
@@ -512,7 +648,7 @@ function addBuilding(b,charge){
   const d=def(b.t);
   if(charge)S.money-=d.cost;
   b.id=++uid;if(!b.k)b.k=S.nk=(S.nk||0)+1;if(b.t==='tank'&&b.lv===undefined)b.lv=charge?100:500;
-  const m=TREEK.includes(b.t)?mkTree(b.t,b.k):make(b.t);m.position.set(b.x,0,b.z);m.rotation.y=b.rot||0;m.userData.id=b.id;
+  const m=TREEK.includes(b.t)?mkTree(b.t,b.k):make(b.t);m.position.set(b.x,bY(b),b.z);m.rotation.y=b.rot||0;m.userData.id=b.id;
   scene.add(m);meshes.set(b.id,m);m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});if(charge){m.userData.pop=0;m.scale.setScalar(.01);}
   m.userData.b=b;if(REQCON.includes(b.t)||BRK.includes(b.t)){const bd=new THREE.Mesh(new THREE.SphereGeometry(.5,8,8),new THREE.MeshBasicMaterial({color:0x22c55e}));bd.position.y=b.t==='tent'?3.6:(b.t==='pool'?3.5:6.2);m.add(bd);m.userData.badge=bd;const nc=new THREE.Sprite(new THREE.SpriteMaterial({map:xTex(),depthTest:false,transparent:true}));nc.scale.set(3.4,3.4,1);nc.position.y=bd.position.y+.8;nc.visible=false;nc.renderOrder=5;m.add(nc);m.userData.nc=nc;if(d.acc)addCleanIcon(m,bd.position.y);}
   netDecor(m,b);
@@ -580,10 +716,11 @@ const cvs=renderer.domElement;
 cvs.addEventListener('pointerdown',e=>{
   mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;
   if(e.pointerType==='touch'){ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ptrs.size===2){const a=[...ptrs.values()];pin={d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),r:radius,cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,an:Math.atan2(a[1].y-a[0].y,a[1].x-a[0].x),th:theta};drag=false;moved=99;return;}if(ptrs.size>2)return;}
+  if(brushOn&&e.button===0&&!e.shiftKey&&e.target===cvs){brushDown();drag=false;return;}
   drag=true;px=e.clientX;py=e.clientY;moved=0;if(placing||pathMode)movePlacement();});
 addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);pin=null;drag=false;});
 addEventListener('pointerup',e=>{
-  ptrs.delete(e.pointerId);if(pin&&ptrs.size<2)pin=null;
+  ptrs.delete(e.pointerId);if(pin&&ptrs.size<2)pin=null;brushUp();
   if(drag&&moved<5&&e.target===cvs&&e.button===0){if(mobUI&&placing&&!pathMode&&e.pointerType==='touch')movePlacement();else clickWorld();}
   drag=false;
 });
@@ -609,7 +746,7 @@ const keys={};
 addEventListener('keydown',e=>{
   if(spectate||(e.target&&e.target.tagName==='INPUT'))return;
   keys[e.key.toLowerCase()]=true;
-  if(e.key==='Escape'){if(pnj)exitPnj();else if(placing||pathMode||linkMode)cancelPlacement();else closeMod();}if(e.key==='Enter'&&pathMode)finishPath(false);
+  if(e.key==='Escape'){if(pnj)exitPnj();else if(placing||pathMode||linkMode||brushOn||fishMode!==null)cancelPlacement();else closeMod();}if(e.key==='Enter'&&pathMode)finishPath(false);
   if(e.key.toLowerCase()==='r')rotatePlacement();if(e.key.toLowerCase()==='n')toggleNet();if(e.key.toLowerCase()==='g')toggleGrid();
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
@@ -670,11 +807,11 @@ S.paths.forEach(addPathMesh);
 function startPath(k){cancelPlacement();pathMode={k:k,pts:[]};gridMesh.visible=true;$('bar').style.display='flex';$('brot').style.display='none';$('bfin').style.display='';updPathBar();}
 function updPathBar(){const K=PK.find(q=>q.k===pathMode.k);$('bt').textContent='Chemin : '+K.n+' ('+pathMode.pts.length+' point'+(pathMode.pts.length>1?'s':'')+')';$('bc').textContent='Clic = poser un point • recliquez le 1er point pour fermer et remplir la surface • Entrée = terminer en ligne • '+K.c+' €/m²';}
 function snapPt(pt){let x=Math.round(pt.x/GR)*GR,z=Math.round(pt.z/GR)*GR,bd=3.2;const c=[];S.paths.forEach(p=>p.pts.forEach(a=>c.push(a)));pathMode.pts.forEach(a=>c.push(a));c.forEach(a=>{const d=Math.hypot(a[0]-pt.x,a[1]-pt.z);if(d<bd){bd=d;x=a[0];z=a[1];}});return [x,z];}
-function updPathPrev(){ray.setFromCamera(mouse,camera);const h=ray.intersectObject(ground);if(!h.length)return;pathCur=snapPt(h[0].point);
+function updPathPrev(){const h=pickGround();if(!h.length)return;pathCur=snapPt(h[0].point);
   if(pathPrev){scene.remove(pathPrev);pathPrev.geometry.dispose();}
   const pts=pathMode.pts.concat([pathCur]).map(a=>new THREE.Vector3(a[0],.3,a[1]));
   pathPrev=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:ownedAt(pathCur[0],pathCur[1])?0x22c55e:0xef4444}));scene.add(pathPrev);}
-function addPathPt(){if(!ownedAt(pathCur[0],pathCur[1])){toast('Point hors de vos parcelles');return;}
+function addPathPt(){if(!ownedAt(pathCur[0],pathCur[1])){toast('Point hors de vos parcelles');return;}if(!isNaN(waterLevelAt(pathCur[0],pathCur[1]))||Math.abs(heightAt(pathCur[0],pathCur[1]))>.6){toast('Terrain non plat ou dans l’eau : aplanissez-le avec le pinceau');return;}
   const P=pathMode.pts;if(P.length>=3&&Math.hypot(pathCur[0]-P[0][0],pathCur[1]-P[0][1])<.5){finishPath(true);return;}
   if(P.length&&Math.hypot(pathCur[0]-P[P.length-1][0],pathCur[1]-P[P.length-1][1])<.5)return;
   P.push(pathCur.slice());play(700,.05);updPathBar();}
@@ -682,9 +819,9 @@ function finishPath(closed){if(!pathMode)return;const P=pathMode.pts.map(a=>a.sl
   let cost;if(closed){let A=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length];A+=a[0]*b[1]-b[0]*a[1];}cost=Math.round(Math.abs(A)/2*K.c);}
   else{let L=0;for(let i=0;i<P.length-1;i++)L+=Math.hypot(P[i+1][0]-P[i][0],P[i+1][1]-P[i][1]);cost=Math.round(L*K.w*K.c);}
   if(S.money<cost){toast('Fonds insuffisants ('+cost.toLocaleString('fr-FR')+' €)');return;}
-  const p={id:++pid,k:K.k,pts:P,closed:closed,cost:cost};S.money-=cost;S.paths.push(p);addPathMesh(p);cancelPlacement();gdirty=true;connectAll();buildSound();toast('Chemin posé : '+cost.toLocaleString('fr-FR')+' €');refreshHUD();save();}
+  const p={id:++pid,k:K.k,pts:P,closed:closed,cost:cost};S.money-=cost;S.paths.push(p);addPathMesh(p);flattenPath(p);cancelPlacement();gdirty=true;connectAll();buildSound();toast('Chemin posé : '+cost.toLocaleString('fr-FR')+' €');refreshHUD();save();}
 $('bfin').onclick=()=>finishPath(false);
-function openInspP(p){selP=p;selB=null;const K=PK.find(k=>k.k===p.k);$('in').textContent=K.n+(p.closed?' (surface)':' (tracé)');$('iu').textContent='Remboursement : '+Math.floor((p.cost||0)*.5).toLocaleString('fr-FR')+' €';$('imov').style.display='none';$('irot').style.display='none';$('insp').style.display='flex';$('ix').innerHTML='';lastX='';}
+function openInspP(p){selP=p;selB=null;selLake=null;$('idem').style.display='';const K=PK.find(k=>k.k===p.k);$('in').textContent=K.n+(p.closed?' (surface)':' (tracé)');$('iu').textContent='Remboursement : '+Math.floor((p.cost||0)*.5).toLocaleString('fr-FR')+' €';$('imov').style.display='none';$('irot').style.display='none';$('insp').style.display='flex';$('ix').innerHTML='';lastX='';}
 $('imov').onclick=()=>{if(!selB)return;const b=selB;$('insp').style.display='none';startPlacement(def(b.t),true);if(!ghost)return;moving=b;prot=b.rot||0;ghost.rotation.y=prot;const m=meshes.get(b.id);if(m)m.visible=false;$('bt').textContent='Déplacement : '+def(b.t).n;$('bc').textContent='Clic = poser • clic droit / Échap = annuler • gratuit';movePlacement();};
 function floatMoney(x,z,txt){const c=document.createElement('canvas');c.width=256;c.height=96;const g=c.getContext('2d');g.font='bold 56px sans-serif';g.textAlign='center';g.lineWidth=8;g.strokeStyle='#064e3b';g.strokeText(txt,128,64);g.fillStyle='#4ade80';g.fillText(txt,128,64);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));sp.scale.set(7,2.6,1);sp.position.set(x,6,z);scene.add(sp);floaters.push({s:sp,t:0});}
 /* ---------- ARRIVÉE DU CIEL & VUE PNJ ---------- */
@@ -713,16 +850,16 @@ function startPlacement(d,mv){if(!mv&&!unlocked(d.t)){toast('🔬 Recherche requ
   ghost=make(d.t);
   ghost.traverse(c=>{if(c.isMesh){c.material=c.material.clone();c.material.transparent=true;c.material.opacity=.6;}});
   scene.add(ghost);gridMesh.visible=true;$('brot').style.display='';$('bfin').style.display='none';
-  $('bar').style.display='flex';$('bt').textContent='Construction : '+d.n;$('bc').textContent='Coût : '+d.cost.toLocaleString('fr-FR')+' €'+(d.beach?' • à poser sur la plage':'');
+  $('bar').style.display='flex';$('bt').textContent='Construction : '+d.n;$('bc').textContent='Coût : '+d.cost.toLocaleString('fr-FR')+' €'+(d.beach?' • à poser sur la plage':'')+(d.t==='pump'?' • à poser DANS l’eau d’un lac':'');
 }
-function cancelPlacement(){linkEnd();if(moving){const mm=meshes.get(moving.id);if(mm)mm.visible=true;}moving=null;pathMode=null;if(pathPrev){scene.remove(pathPrev);pathPrev=null;}if(ghost)scene.remove(ghost);ghost=null;placing=null;gridMesh.visible=gridOn;$('bar').style.display='none';$('brot').style.display='';$('bfin').style.display='none';}
+function cancelPlacement(){fishMode=null;try{brushOff();}catch(e){}linkEnd();if(moving){const mm=meshes.get(moving.id);if(mm)mm.visible=true;}moving=null;pathMode=null;if(pathPrev){scene.remove(pathPrev);pathPrev=null;}if(ghost)scene.remove(ghost);ghost=null;placing=null;gridMesh.visible=gridOn;$('bar').style.display='none';$('brot').style.display='';$('bfin').style.display='none';}
 function rotatePlacement(){if(!placing)return;prot=(prot+Math.PI/2)%(Math.PI*2);ghost.rotation.y=prot;movePlacement();}
 function ownedAt(x,z){return S.parcels.find(p=>p.owned&&x>=p.minX&&x<=p.maxX&&z>=p.minZ&&z<=p.maxZ);}
 function movePlacement(){
   if(pathMode){updPathPrev();return;}
   if(!placing)return;
   ray.setFromCamera(mouse,camera);
-  const h=ray.intersectObject(ground);if(!h.length)return;
+  const h=pickGround(true);if(!h.length)return;
   const d0=placing,sw0=Math.abs(Math.sin(prot))>.5,hw=(sw0?d0.d:d0.w)/2,hd=(sw0?d0.w:d0.d)/2;const x=Math.round((h[0].point.x-hw)/GR)*GR+hw,z=Math.round((h[0].point.z-hd)/GR)*GR+hd;
   ppos.set(x,0,z);ghost.position.copy(ppos);
   const d=placing,sw=(Math.abs(Math.sin(prot))>.5),w=(sw?d.d:d.w)/2,dd=(sw?d.w:d.d)/2;
@@ -743,33 +880,35 @@ function movePlacement(){
       return !flat&&Math.abs(b.x-x)<bw+w-.2&&Math.abs(b.z-z)<bdd+dd-.2;
     });
   }
+  if(ok)ok=terrainPlaceOk(d,x,z,w,dd);
   pvalid=ok;
   const col=ok?0x10b981:0xef4444;
   ghost.traverse(c=>{if(c.isMesh&&c.material.color)c.material.color.setHex(col);});
 }
 function clickWorld(){
-  if(pnj||drop)return;if(linkMode){linkClick();return;}if(pathMode){addPathPt();return;}
+  if(pnj||drop)return;if(linkMode){linkClick();return;}if(brushOn)return;if(fishMode!==null){fishClick();return;}if(pathMode){addPathPt();return;}
   if(placing){
-    if(pvalid){if(moving){const mb=moving;mb.x=ppos.x;mb.z=ppos.z;mb.rot=prot;const mm=meshes.get(mb.id);mm.position.set(mb.x,0,mb.z);mm.rotation.y=prot;mm.visible=true;moving=null;cancelPlacement();gdirty=true;connectAll();toast('Déplacé !');buildSound();save();return;}
+    if(pvalid){if(moving){const mb=moving;mb.x=ppos.x;mb.z=ppos.z;mb.rot=prot;const mm=meshes.get(mb.id);mm.position.set(mb.x,bY(mb),mb.z);terrainAfterBuild(mb);mm.rotation.y=prot;mm.visible=true;moving=null;cancelPlacement();gdirty=true;connectAll();toast('Déplacé !');buildSound();save();return;}
       const wasOk=WALLK.includes(placing.t)?S.buildings.filter(x=>REQCON.includes(x.t)&&x.cn!==false):null;
-addBuilding({t:placing.t,x:ppos.x,z:ppos.z,rot:prot},true);
+addBuilding({t:placing.t,x:ppos.x,z:ppos.z,rot:prot},true);terrainAfterBuild(S.buildings[S.buildings.length-1]);
 connectAll();toast('« '+placing.n+' » construit !');if(placing.t==='parking'){const pl=S.buildings[S.buildings.length-1];toast(lotInfo(pl).node>=0?'🅿️ Parking relié à la route : les vacanciers s\'y garent.':'🅿️ Parking non relié : posez-le contre une route ou un chemin relié à l\'entrée.');}if(placing.t==='statue')toast('⚡ Raccordez la statue à un transformateur : elle s\'éclairera la nuit.');if(wasOk){const lost=wasOk.filter(x=>x.cn===false);if(lost.length)toast('🚧 '+lost.length+' bâtiment(s) inaccessible(s) (⛔) : remplacez un mur par un mur avec porte et faites-y passer un chemin.');}if(REQCON.includes(placing.t)&&S.buildings[S.buildings.length-1].cn===false)toast('⛔ Pas relié à un chemin piéton : bâtiment inactif !');
       buildSound();
       if(S.money<placing.cost)cancelPlacement();
       refreshHUD();save();
-    }else toast('Emplacement invalide (parcelle non achetée, collision ou fonds insuffisants)');
+    }else toast('Emplacement invalide (parcelle non achetée, collision, fonds insuffisants, terrain non plat ou dans l’eau — la pompe, elle, se pose dans l’eau)');
     return;
   }
+  if(deadFishClick())return;
   ray.setFromCamera(mouse,camera);
   const hits=ray.intersectObjects([...meshes.values()],true);
   if(hits.length){
     let o=hits[0].object;while(o&&!o.userData.id)o=o.parent;
     if(o)openInsp(S.buildings.find(b=>b.id===o.userData.id));
-  }else{const ph=ray.intersectObjects([...pathMeshes.values()],true);if(ph.length){let o=ph[0].object;while(o&&!o.userData.pid)o=o.parent;const p=o&&S.paths.find(q=>q.id===o.userData.pid);if(p){openInspP(p);return;}}$('insp').style.display='none';}
+  }else{const ph=ray.intersectObjects([...pathMeshes.values()],true);if(ph.length){let o=ph[0].object;while(o&&!o.userData.pid)o=o.parent;const p=o&&S.paths.find(q=>q.id===o.userData.pid);if(p){openInspP(p);return;}}if(lakeClick())return;$('insp').style.display='none';selLake=null;}
 }
 let selB=null;
 function openInsp(b){
-  if(!b)return;selB=b;selP=null;$('imov').style.display='';$('irot').style.display='';const d=def(b.t);
+  if(!b)return;selB=b;selP=null;selLake=null;$('idem').style.display='';$('imov').style.display='';$('irot').style.display='';const d=def(b.t);
   $('in').textContent=d.n+stTxt(b);$('iu').textContent='Entretien : '+d.up+' €/j • Remboursement : '+Math.floor(d.cost*.5).toLocaleString('fr-FR')+' €';
   $('insp').style.display='flex';inspX(true);
 }
@@ -789,7 +928,7 @@ const U={wl:0,wc:0,el:0,ec:0},netG=new THREE.Group(),ringG=new THREE.Group(),pip
 let linkMode=null,netView=false,lastX='',isz=3,labT=0;
 function payOf(b){let p=S.pricing[b.t]||def(b.t).price;if(!b.wo)p*=.75;if(!b.eo)p*=.75;return Math.round(p);}
 function uOff(b){return !!((WU[b.t]&&!b.wo)||(EU[b.t]&&!b.eo));}
-function actOf(b){return def(b.t).acc?(b.st==='occ'?1:.25):.4+Math.min(.6,people.length/40);}
+function actOf(b){if(b.t==='pump')return 1;return def(b.t).acc?(b.st==='occ'?1:.25):.4+Math.min(.6,people.length/40);}
 function utilTick(dt){
   const dH=dt*S.speed/4,B=S.buildings,Kk={};B.forEach(b=>{Kk[b.k]=b;});U.wl=0;U.wc=0;U.el=0;U.ec=0;
   B.forEach(b=>{if(b.t==='tank'){if(b.lv===undefined)b.lv=500;b.use=0;b.n=0;if(rainOn&&dH>0)b.lv=Math.min(500,b.lv+60*rain*dH);}
@@ -835,6 +974,7 @@ function inspX(force){const b=selB;if(!b||selP)return;
     h+=P('⚡ Consommation totale : '+ld.toFixed(1)+' kW / '+cap+' kW ('+p+'%)','#fde047')+Bar(p,p>90?'#ef4444':'#facc15')+P('Capacité disponible : '+Math.max(0,cap-ld).toFixed(1)+' kW • '+(b.n||0)+' raccordé(s)')+(b.br?P('🔧 En panne : tout est coupé','#f87171'):'')+(b.nom>cap&&!b.br?P('⚠️ Surcharge : certains bâtiments sont coupés','#f87171'):'')+BT('le','🔌 Raccorder des bâtiments');}
   if(WU[b.t]){const t=b.w&&S.buildings.find(x=>x.k===b.w);h+=P(b.wo?'💧 Eau : alimenté ('+WU[b.t]+' L/j)':'💧 Eau : '+(t?'citerne vide':'non raccordé'),b.wo?'#34d399':'#f87171')+BT('cw',t?'💧 Changer de citerne':"💧 Raccorder à l'eau")+(t?BT('uw','✂️'):'');}
   if(EU[b.t]){const i=b.e&&S.buildings.find(x=>x.k===b.e);h+=P(b.eo?'⚡ Électricité : alimenté ('+EU[b.t]+' kW)':'⚡ Électricité : '+(!i?'non raccordé':(i.br?'installation en panne':'réseau saturé')),b.eo?'#34d399':'#f87171')+BT('ce',i?"⚡ Changer d'installation":"⚡ Raccorder à l'électricité")+(i?BT('ue','✂️'):'');}
+  if(b.t==='pump')h+=pumpInfoHtml(b);
   if(force||h!==lastX){$('ix').innerHTML=h;lastX=h;}}
 $('ix').onclick=e=>{const a=e.target.dataset&&e.target.dataset.a,b=selB;if(!a||!b)return;
   if(a==='fill'){const lv=b.lv===undefined?500:b.lv,c=Math.round((500-lv)*.15);if(c<=0){toast('Citerne déjà pleine');return;}if(S.money<c){toast('Fonds insuffisants');return;}S.money-=c;b.lv=500;toast('🚛 Camion-citerne : citerne remplie ('+c+' €)');refreshHUD();save();}
@@ -867,7 +1007,7 @@ function stats(){
   const has=S.staff.rec>0&&S.buildings.some(b=>b.t==='reception');
   const occ=S.buildings.filter(b=>def(b.t).acc&&b.st==='occ');
   const rn=S.buildings.filter(b=>RESTO.includes(b.t)&&b.cn!==false&&!uOff(b)).length,inc=occ.reduce((a,b)=>a+payOf(b),0)+Math.min(rn,S.staff.wait||0,S.staff.cook||0)*Math.min(220,occ.length*9);
-  const sal=S.staff.rec*40+S.staff.clean*35+S.staff.mech*50+(S.staff.wait||0)*38+(S.staff.cook||0)*55+(S.staff.gard||0)*36;
+  const sal=S.staff.rec*40+S.staff.clean*35+S.staff.mech*50+(S.staff.wait||0)*38+(S.staff.cook||0)*55+(S.staff.gard||0)*36+(S.staff.ent||0)*42;
   const exp=S.buildings.reduce((a,b)=>a+def(b.t).up,0)+Math.round(S.debt/30)+sal;
   return {inc:Math.round(inc),exp:Math.round(exp),stars:Math.max(1,starLevel()),people:occ.length*3,has:has};
 }
@@ -888,6 +1028,7 @@ function refreshHUD(){
   $('date').textContent='Mois '+S.month+' • Jour '+S.day;{const T=tempNow();$('wx').textContent=(storm?'🚨 Tempête':rainOn?'🌧️ Pluie':(T>=30?'🔥 Chaud':'☀️ Beau'))+' '+Math.round(T)+'°C'+(wnd>.72?' 💨':'');}
 }
 function endOfDay(){
+  lakesDaily();
   const st=stats();let dep=0;
   S.buildings.forEach(b=>{if(def(b.t).acc&&b.st==='occ')floatMoney(b.x,b.z,'+'+payOf(b)+' €');});
   S.money+=st.inc-st.exp;
@@ -928,9 +1069,10 @@ function openMod(k){
     draw();
   }else if(k==='build'){
     $('mt').textContent='🔨 Construire';
-    const cats=['Tous'].concat([...new Set(CAT.filter(c=>!c.hid).map(c=>c.c))]).concat(['Chemins']);
+    const cats=['Tous'].concat([...new Set(CAT.filter(c=>!c.hid).map(c=>c.c))]).concat(['Chemins','Poissons','➕ Terrain']);
     b.innerHTML='<div class="tabs">'+cats.map(c=>'<button class="btn '+(c===mcat?'':'s')+'" data-c="'+c+'">'+c+'</button>').join('')+'</div><div class="grid">'+
-      (mcat==='Chemins'?[]:CAT.filter(c=>!c.hid&&(mcat==='Tous'||c.c===mcat))).map(c=>'<div class="card '+(unlocked(c.t)?'':'lock')+'"><div style="font-size:26px">'+c.i+'</div><b>'+c.n+'</b>'+(unlocked(c.t)?'':'<div style="color:#fbbf24">🔬 Recherche : '+TECHS.find(x=>x.id===REQ[c.t]).n+'</div>')+'<div style="color:var(--mu)">Entretien '+c.up+' €/j • '+c.w+'×'+c.d+' m'+(c.acc?' • '+c.price+' €/nuit':'')+'</div><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:#34d399">'+c.cost.toLocaleString('fr-FR')+' €</b><button class="btn" data-t="'+c.t+'" '+((S.money<c.cost||!unlocked(c.t))?'disabled':'')+'>'+(unlocked(c.t)?'Placer':'🔒')+'</button></div></div>').join('')+(mcat==='Chemins'?PK.map(k=>'<div class="card"><div style="font-size:26px">'+k.i+'</div><b>'+k.n+'</b><div style="color:var(--mu)">Largeur '+k.w+' m • '+k.c+' €/m²</div><div style="color:var(--mu);font-size:11px">Posez des points : relier le dernier au premier remplit toute la surface. Tout bâtiment touché devient accessible.</div><button class="btn" data-pk="'+k.k+'">Tracer</button></div>').join(''):'')+'</div>';
+      (mcat==='Chemins'?[]:CAT.filter(c=>!c.hid&&(mcat==='Tous'||c.c===mcat))).map(c=>'<div class="card '+(unlocked(c.t)?'':'lock')+'"><div style="font-size:26px">'+c.i+'</div><b>'+c.n+'</b>'+(unlocked(c.t)?'':'<div style="color:#fbbf24">🔬 Recherche : '+TECHS.find(x=>x.id===REQ[c.t]).n+'</div>')+'<div style="color:var(--mu)">Entretien '+c.up+' €/j • '+c.w+'×'+c.d+' m'+(c.acc?' • '+c.price+' €/nuit':'')+'</div><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:#34d399">'+c.cost.toLocaleString('fr-FR')+' €</b><button class="btn" data-t="'+c.t+'" '+((S.money<c.cost||!unlocked(c.t))?'disabled':'')+'>'+(unlocked(c.t)?'Placer':'🔒')+'</button></div></div>').join('')+(mcat==='Chemins'?PK.map(k=>'<div class="card"><div style="font-size:26px">'+k.i+'</div><b>'+k.n+'</b><div style="color:var(--mu)">Largeur '+k.w+' m • '+k.c+' €/m²</div><div style="color:var(--mu);font-size:11px">Posez des points : relier le dernier au premier remplit toute la surface. Tout bâtiment touché devient accessible.</div><button class="btn" data-pk="'+k.k+'">Tracer</button></div>').join(''):'')+(mcat==='Poissons'?fishCardsHtml():'')+(mcat==='➕ Terrain'?terrainPanelHtml():'')+'</div>';
+    bindBuildExtras(b);
     b.querySelectorAll('[data-pk]').forEach(x=>x.onclick=()=>{closeMod();startPath(x.dataset.pk);});
     b.querySelectorAll('[data-c]').forEach(x=>x.onclick=()=>{mcat=x.dataset.c;openMod('build');});
     b.querySelectorAll('[data-t]').forEach(x=>x.onclick=()=>{closeMod();startPlacement(def(x.dataset.t));});
@@ -944,8 +1086,8 @@ function openMod(k){
     b.querySelectorAll('[data-i]').forEach(x=>x.onclick=()=>{const l=LOANS[x.dataset.i];if(Date.now()-(S.lastLoan||0)<1800000)return;S.lastLoan=Date.now();S.money+=l.a;S.debt+=Math.round(l.a*1.15);toast('Fonds reçus : '+l.a.toLocaleString('fr-FR')+' €');play(1500,.15);refreshHUD();save();openMod('bank');});
   }else if(k==='staff'){
     $('mt').textContent='👔 Personnel (salaires payés chaque jour)';
-    const RL=[['rec','🧑‍💼','Réceptionniste',40,"Accueille les vacanciers. Sans réceptionniste, la barrière reste fermée et les clients repartent."],['clean','🧹','Agent de ménage',35,"Nettoie logements après chaque départ. Un logement sale ne peut pas être reloué."],['mech','🔧','Mécanicien',50,"Répare piscine, toboggan et sanitaires quand ils tombent en panne."],['wait','🤵','Serveur',38,"Sert les clients. Sans serveur ET cuisinier, un restaurant n'accueille personne."],['gard','🌿','Jardinier',36,"Ramasse les feuilles tombées, arrose la pelouse quand il fait chaud et entretient les espaces verts. Avec la recherche Reboisement, il replante les arbres tombés dans les tempêtes."],['cook','👨‍🍳','Cuisinier',55,"Prépare les repas. Indispensable avec au moins un serveur."]];
-    b.innerHTML='<div class="grid">'+RL.map(r=>{const lk=((r[0]==='wait'||r[0]==='cook')&&!S.techs.includes('brigade'))||(r[0]==='gard'&&!S.techs.includes('jardin'));return '<div class="card '+(lk?'lock':'')+'"><div style="font-size:26px">'+r[1]+'</div><b>'+r[2]+'</b><div style="color:var(--mu)">'+r[4]+'</div><div>Salaire : '+r[3]+' €/jour chacun</div>'+(lk?'<div style="color:#fbbf24">🔬 Recherche « '+(r[0]==='gard'?'Jardinage':'Brigade de cuisine')+' » requise</div>':'<div style="display:flex;gap:8px;align-items:center"><button class="btn s" data-k="'+r[0]+'" data-d="-1">−</button><b style="font-size:18px">'+(S.staff[r[0]]||0)+'</b><button class="btn" data-k="'+r[0]+'" data-d="1">+ Embaucher</button></div>')+'</div>';}).join('')+'</div><p style="margin-top:12px;color:var(--mu);font-size:12px">Pastilles : 🟢 libre • 🔵 occupé • 🟤 sale • 🟡 nettoyage / réparation • 🔴 panne • 🟠 restaurant fermé (manque serveur/cuisinier) • ❌ non relié à un chemin.</p>';
+    const RL=[['rec','🧑‍💼','Réceptionniste',40,"Accueille les vacanciers. Sans réceptionniste, la barrière reste fermée et les clients repartent."],['clean','🧹','Agent de ménage',35,"Nettoie logements après chaque départ. Un logement sale ne peut pas être reloué."],['mech','🔧','Mécanicien',50,"Répare piscine, toboggan et sanitaires quand ils tombent en panne."],['wait','🤵','Serveur',38,"Sert les clients. Sans serveur ET cuisinier, un restaurant n'accueille personne."],['gard','🌿','Jardinier',36,"Ramasse les feuilles tombées, arrose la pelouse quand il fait chaud et entretient les espaces verts. Avec la recherche Reboisement, il replante les arbres tombés dans les tempêtes."],['cook','👨‍🍳','Cuisinier',55,"Prépare les repas. Indispensable avec au moins un serveur."],['ent','🧽','Entreteneur',42,"Retire automatiquement les poissons morts des lacs (sinon, il faut cliquer sur chacun)."]];
+    b.innerHTML='<div class="grid">'+RL.map(r=>{const lk=((r[0]==='wait'||r[0]==='cook')&&!S.techs.includes('brigade'))||(r[0]==='gard'&&!S.techs.includes('jardin'))||(r[0]==='ent'&&!S.techs.includes('entretien'));return '<div class="card '+(lk?'lock':'')+'"><div style="font-size:26px">'+r[1]+'</div><b>'+r[2]+'</b><div style="color:var(--mu)">'+r[4]+'</div><div>Salaire : '+r[3]+' €/jour chacun</div>'+(lk?'<div style="color:#fbbf24">🔬 Recherche « '+(r[0]==='gard'?'Jardinage':r[0]==='ent'?'Métier : Entreteneur':'Brigade de cuisine')+' » requise</div>':'<div style="display:flex;gap:8px;align-items:center"><button class="btn s" data-k="'+r[0]+'" data-d="-1">−</button><b style="font-size:18px">'+(S.staff[r[0]]||0)+'</b><button class="btn" data-k="'+r[0]+'" data-d="1">+ Embaucher</button></div>')+'</div>';}).join('')+'</div><p style="margin-top:12px;color:var(--mu);font-size:12px">Pastilles : 🟢 libre • 🔵 occupé • 🟤 sale • 🟡 nettoyage / réparation • 🔴 panne • 🟠 restaurant fermé (manque serveur/cuisinier) • ❌ non relié à un chemin.</p>';
     b.querySelectorAll('[data-k]').forEach(x=>x.onclick=()=>{const k2=x.dataset.k,n=(S.staff[k2]||0)+(+x.dataset.d);if(n<0||n>6)return;S.staff[k2]=n;syncWorkers();refreshHUD();save();play(500,.08);openMod('staff');});
   }else if(k==='research'){
     $('mt').textContent='🔬 Recherche & Développement';
@@ -1134,7 +1276,7 @@ function arrivalsTick(){
   if(S.time<8||S.time>20||cars.length>=10)return;
   const fr=S.buildings.filter(b=>def(b.t).acc&&b.cn!==false&&(!b.st||b.st==='free')),free=fr.some(b=>carNodeFor(b)>=0);
 if(fr.length&&!free&&Date.now()-(arrivalsTick.h||0)>60000){arrivalsTick.h=Date.now();toast("🛣️ Les voitures roulent uniquement sur les routes et chemins : reliez l'entrée à vos emplacements.");}
-  if(free&&Math.random()<(.35+starLevel()*.08+funV()*.01+matL()*.04)*priceFactor()*(1+loisirBonus())*(overpriced().length?.2:1))spawnCar();
+  if(free&&Math.random()<(.35+starLevel()*.08+funV()*.01+matL()*.04)*priceFactor()*(1+loisirBonus())*(overpriced().length?.2:1)*waterFactor())spawnCar();
 }
 function badgeOf(b){if(b.cn===false)return null;if(RESTO.includes(b.t)&&!restoOk())return 0xf59e0b;
   if(BRK.includes(b.t))return b.br?(b.fx?0xfacc15:0xef4444):null;
@@ -1150,6 +1292,7 @@ function badgeTick(t){meshes.forEach(m=>{const bd=m.userData.badge;if(!bd)return
   if(c===null||c===undefined){bd.visible=false;return;}bd.visible=true;bd.material.color.setHex(c);bd.scale.setScalar(b.br&&!b.fx?1+.35*Math.sin(t*8):1);});}
 function front(b,k){const r=b.rot||0,o=def(b.t).d/2+k;return V(b.x+Math.sin(r)*o,b.z+Math.cos(r)*o);}
 function syncWorkers(){
+  try{entSync();}catch(e){}
   const col={rec:0x2563eb,clean:0xeab308,mech:0xf97316,wait:0xf8fafc,cook:0xffffff,gard:0x16a34a};
   ['rec','clean','mech','wait','cook','gard'].forEach(r=>{let mine=workers.filter(w=>w.role===r);
     while(mine.length<S.staff[r]){const m=mkHuman(col[r],r);m.position.set(EX-4+Math.random()*4,0,-17);scene.add(m);const w={role:r,m:m,task:null,prog:0};workers.push(w);mine.push(w);}
@@ -1473,10 +1616,191 @@ else{g.add(tb(.2,1.9,.2,'plank',-3,.95,0),tb(.2,1.9,.2,'plank',3,.95,0),tb(6.2,.
 
 /* ---------- BOUCLE ---------- */
 const clock=new THREE.Clock();let lastDay=S.day,acc=0;
+/* ================= TERRAIN : outils (pinceau), lacs, pompe, poissons, entreteneur ================= */
+const brush={mode:'dig',r:8,str:3};let painting=false,eMask=null,lastWaterT=0,strokeWarn=false,hudT=0,lakeUiT=0;const warned=new Set();
+const BMODES=[['dig','⛏️ Creuser','Creuse un trou (terre)'],['raise','⛰️ Monter','Fait une montagne'],['flat','🟰 Aplanir','Remet le sol à niveau'],['fill','💧 Remplir d’eau','Remplit un creux d’eau réaliste'],['drain','🚰 Vider l’eau','Enlève l’eau d’un lac']];
+const BCOL={dig:0xb45309,raise:0x22c55e,flat:0xeab308,fill:0x38bdf8,drain:0xf87171};
+function inPolyP(x,z,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){if(((P[i][1]>z)!==(P[j][1]>z))&&(x<(P[j][0]-P[i][0])*(z-P[i][1])/(P[j][1]-P[i][1])+P[i][0]))c=!c;}return c;}
+function segDist(x,z,a,b){const dx=b[0]-a[0],dz=b[1]-a[1],l=dx*dx+dz*dz;let t=l?((x-a[0])*dx+(z-a[1])*dz)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(x-(a[0]+dx*t),z-(a[1]+dz*t));}
+function buildEditMask(){const m=new Uint8Array(NV);
+  for(let j=1;j<TNZ;j++)for(let i=1;i<TNX;i++){const x=TX0+i*TCS,z=TZ0+j*TCS;if(z<2)continue;const p=ownedAt(x,z);if(p&&!p.beach)m[j*TW1+i]=1;}
+  const lockRect=(cx,cz,hw,hd)=>{const i0=Math.max(0,Math.floor((cx-hw-TX0)/TCS)),i1=Math.min(TNX,Math.ceil((cx+hw-TX0)/TCS)),j0=Math.max(0,Math.floor((cz-hd-TZ0)/TCS)),j1=Math.min(TNZ,Math.ceil((cz+hd-TZ0)/TCS));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)m[j*TW1+i]=0;};
+  S.buildings.forEach(b=>{if(FOLLOW(b.t))return;const d=def(b.t),sw=Math.abs(Math.sin(b.rot||0))>.5;lockRect(b.x,b.z,(sw?d.d:d.w)/2+1.2,(sw?d.w:d.d)/2+1.2);});
+  S.paths.forEach(p=>{const K=PK.find(k=>k.k===p.k),hw=(K?K.w:3)/2+1.2,P=p.pts;let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;P.forEach(a=>{x0=Math.min(x0,a[0]);x1=Math.max(x1,a[0]);z0=Math.min(z0,a[1]);z1=Math.max(z1,a[1]);});
+    const i0=Math.max(0,Math.floor((x0-hw-TX0)/TCS)),i1=Math.min(TNX,Math.ceil((x1+hw-TX0)/TCS)),j0=Math.max(0,Math.floor((z0-hw-TZ0)/TCS)),j1=Math.min(TNZ,Math.ceil((z1+hw-TZ0)/TCS));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const x=TX0+i*TCS,z=TZ0+j*TCS;let lock=p.closed&&inPolyP(x,z,P);
+      if(!lock)for(let q=0;q<P.length-1+(p.closed?1:0);q++){if(segDist(x,z,P[q],P[(q+1)%P.length])<=hw){lock=true;break;}}if(lock)m[j*TW1+i]=0;}});
+  return m;}
+function brushApply(cx,cz,dt){const r=brush.r,i0=Math.max(1,Math.floor((cx-r-TX0)/TCS)),i1=Math.min(TNX-1,Math.ceil((cx+r-TX0)/TCS)),j0=Math.max(1,Math.floor((cz-r-TZ0)/TCS)),j1=Math.min(TNZ-1,Math.ceil((cz+r-TZ0)/TCS));
+  let ch=false;const st=brush.str*.8*dt;
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const k=j*TW1+i;if(!eMask[k])continue;const d=Math.hypot(TX0+i*TCS-cx,TZ0+j*TCS-cz);if(d>r)continue;
+    let f=1-d/r;f=f*f*(3-2*f);const h=TH[k];
+    if(brush.mode==='raise')TH[k]=Math.min(HMAX,h+f*st*3);
+    else if(brush.mode==='dig')TH[k]=Math.max(HMIN,h-f*st*3);
+    else TH[k]=h+(0-h)*Math.min(1,f*dt*brush.str*1.6);
+    if(Math.abs(TH[k]-h)>1e-5)ch=true;}
+  if(ch){tMark(i0,i1,j0,j1);wDirty=true;}}
+function brushDown(){const h=pickGround(brush.mode==='fill'||brush.mode==='drain');if(!h.length)return;const p=h[0].point;
+  if(brush.mode==='fill'){if(fillAt(p.x,p.z))endStroke();return;}
+  if(brush.mode==='drain'){if(drainAt(p.x,p.z))endStroke();return;}
+  eMask=buildEditMask();painting=true;strokeWarn=false;
+  const i=Math.round((p.x-TX0)/TCS),j=Math.round((p.z-TZ0)/TCS);if(i<1||j<1||i>=TNX||j>=TNZ||!eMask[j*TW1+i]){toast('⛔ Zone non modifiable : parcelle non achetée, entrée ou construction/chemin (rayon réduit autour).');}}
+function brushUp(){if(painting){painting=false;endStroke();}}
+function endStroke(){if(tDirty){tRefresh(tDirty);tDirty=null;}fixWater();saveTerrain();followY();fishSync();save();}
+function followY(){S.buildings.forEach(b=>{if(FOLLOW(b.t)||b.t==='pump'){const m=meshes.get(b.id);if(m)m.position.y=bY(b);}});}
+const brushRing=new THREE.LineLoop(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(64*3),3)),new THREE.LineBasicMaterial({color:0xffffff,depthTest:false,transparent:true}));
+brushRing.renderOrder=9;brushRing.visible=false;brushRing.frustumCulled=false;scene.add(brushRing);
+function ringUpdate(cx,cz,r,col,surf){const a=brushRing.geometry.attributes.position;for(let q=0;q<64;q++){const an=q/64*Math.PI*2,x=cx+Math.cos(an)*r,z=cz+Math.sin(an)*r;let y=heightAt(x,z);if(surf){const L=waterLevelAt(x,z);if(!isNaN(L))y=Math.max(y,L);}a.setXYZ(q,x,y+.25,z);}
+  a.needsUpdate=true;brushRing.material.color.setHex(col);brushRing.visible=true;}
+/* barre d'outils du pinceau */
+{const st=document.createElement('style');st.textContent='#tbar{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--p);border-radius:12px;padding:10px 14px;z-index:12;display:none;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:96vw;font-size:12px}#tbar label{display:flex;gap:6px;align-items:center}#tbar input[type=range]{width:110px}.mob #tbar{left:6px;right:6px;transform:none;bottom:calc(76px + env(safe-area-inset-bottom,0px))}';document.head.appendChild(st);
+  const tb=document.createElement('div');tb.id='tbar';
+  tb.innerHTML=BMODES.map(m=>'<button class="btn s" data-bm="'+m[0]+'" title="'+m[2]+'">'+m[1]+'</button>').join('')+'<label>Rayon <input type="range" id="tbr" min="2" max="30" value="8"><b id="tbrv">8 m</b></label><label>Force <input type="range" id="tbs" min="1" max="5" value="3"></label><button class="btn r" id="tbx">✔ Terminer</button>';
+  document.body.appendChild(tb);
+  tb.querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>{brush.mode=b.dataset.bm;tbSync();});
+  $('tbr').oninput=()=>{brush.r=+$('tbr').value;tbSync();};$('tbs').oninput=()=>{brush.str=+$('tbs').value;};$('tbx').onclick=cancelPlacement;}
+function tbSync(){document.querySelectorAll('#tbar [data-bm]').forEach(b=>b.className='btn'+(b.dataset.bm===brush.mode?'':' s'));$('tbr').value=brush.r;$('tbrv').textContent=brush.r+' m';$('tbs').value=brush.str;}
+function brushStart(){cancelPlacement();brushOn=true;tbSync();$('tbar').style.display='flex';gridMesh.visible=false;toast('🖌️ Pinceau actif : maintenez le clic pour modeler (clic droit / Maj = déplacer la caméra)');}
+function brushOff(){if(painting){painting=false;endStroke();}brushOn=false;brushRing.visible=false;const t=document.getElementById('tbar');if(t)t.style.display='none';}
+/* règles de pose sur le relief */
+function terrainPlaceOk(d,x,z,hw,hd){
+  if(d.t==='pump'){const pts=[[x,z],[x-hw,z-hd],[x+hw,z-hd],[x-hw,z+hd],[x+hw,z+hd]];let L=NaN;
+    for(const p of pts){const l=waterLevelAt(p[0],p[1]);if(isNaN(l)||l-heightAt(p[0],p[1])<.35)return false;L=l;}ghost.position.y=L;return true;}
+  if(FOLLOW(d.t)){const L=waterLevelAt(x,z);if(!isNaN(L))return false;ghost.position.y=heightAt(x,z);return true;}
+  ghost.position.y=0;
+  for(let xx=x-hw;xx<=x+hw+.01;xx+=1)for(let zz=z-hd;zz<=z+hd+.01;zz+=1){if(!isNaN(waterLevelAt(xx,zz)))return false;if(Math.abs(heightAt(xx,zz))>.45)return false;}
+  return true;}
+function terrainAfterBuild(b){if(!b||FOLLOW(b.t)||b.t==='pump')return;const d=def(b.t),sw=Math.abs(Math.sin(b.rot||0))>.5,hw=(sw?d.d:d.w)/2,hd=(sw?d.w:d.d)/2;
+  const i0=Math.max(1,Math.floor((b.x-hw-TX0)/TCS)),i1=Math.min(TNX-1,Math.ceil((b.x+hw-TX0)/TCS)),j0=Math.max(1,Math.floor((b.z-hd-TZ0)/TCS)),j1=Math.min(TNZ-1,Math.ceil((b.z+hd-TZ0)/TCS));let ch=false;
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const k=j*TW1+i;if(TH[k]!==0||TW[k]>-90){TH[k]=0;TW[k]=-99;TA[k]=0;ch=true;}}
+  if(ch){tMark(i0,i1,j0,j1);tRefresh(tDirty);tDirty=null;fixWater();saveTerrain();}}
+/* ---------- poissons ---------- */
+const fishMeshes=new Map(),FG_SPH=new THREE.SphereGeometry(.5,10,8),FG_CONE=new THREE.ConeGeometry(.5,1,4).rotateX(Math.PI/2),FG_DOR=new THREE.ConeGeometry(.5,1,3),FG_HIT=new THREE.SphereGeometry(1.4,6,5);
+const fMats={},deadMat=new THREE.MeshStandardMaterial({color:0xcfd2c4,roughness:.9}),hitMat=new THREE.MeshBasicMaterial({visible:false}),eyeMat=new THREE.MeshBasicMaterial({color:0x111111});
+const fMat=(c,metal)=>fMats[c+'_'+(metal?1:0)]||(fMats[c+'_'+(metal?1:0)]=new THREE.MeshStandardMaterial({color:c,roughness:metal?.25:.6,metalness:metal?.6:0}));
+function mkFishMesh(f){const sp=FISH[f.s],L=sp.L,g=new THREE.Group(),body=new THREE.Mesh(FG_SPH,fMat(sp.c,sp.metal));body.scale.set(.36*L,.42*L*(sp.slim||1),L);g.add(body);
+  if(sp.koi){const p=new THREE.Mesh(FG_SPH,fMat(0xf26a1b));p.scale.set(.3*L,.3*L,.5*L);p.position.set(0,.1*L,.12*L);g.add(p);}
+  const tail=new THREE.Group();tail.position.z=-.48*L;const tm=new THREE.Mesh(FG_CONE,fMat(sp.f));tm.scale.set(.2*L,.9*L*(sp.slim||1),.5*L);tm.position.z=-.25*L;tail.add(tm);g.add(tail);
+  const dor=new THREE.Mesh(FG_DOR,fMat(sp.f));dor.scale.set(.12*L,.32*L,.4*L);dor.position.set(0,.22*L*(sp.slim||1),-.05*L);g.add(dor);
+  [-1,1].forEach(s=>{const e=new THREE.Mesh(FG_SPH,eyeMat);e.scale.setScalar(.07*L);e.position.set(s*.15*L,.09*L,.38*L);g.add(e);});
+  if(sp.snout){const sn=new THREE.Mesh(FG_CONE,fMat(sp.c));sn.scale.set(.2*L,.16*L,.35*L);sn.position.z=.6*L;g.add(sn);}
+  const hit=new THREE.Mesh(FG_HIT,hitMat);hit.userData.fid=f.id;g.add(hit);
+  g.userData={tail:tail,ang:Math.random()*6.28,want:0,sp:.5,tT:0,body:g,hit:hit,dead:false};g.userData.want=g.userData.ang;g.position.set(f.x,(waterLevelAt(f.x,f.z)||-.1)-.3,f.z);scene.add(g);fishMeshes.set(f.id,g);return g;}
+function fishSync(){const ids=new Set(S.fish.map(f=>f.id));fishMeshes.forEach((g,id)=>{if(!ids.has(id)){scene.remove(g);fishMeshes.delete(id);}});
+  S.fish.forEach(f=>{let g=fishMeshes.get(f.id);if(!g)g=mkFishMesh(f);if(f.d&&!g.userData.dead){g.userData.dead=true;g.traverse(o=>{if(o.isMesh&&o.material!==hitMat&&o.material!==eyeMat)o.material=deadMat;});}});}
+function startFish(i){cancelPlacement();fishMode=i;const sp=FISH[i];$('bar').style.display='flex';$('brot').style.display='none';$('bfin').style.display='none';
+  $('bt').textContent=sp.i+' '+sp.n+' — mise à l’eau';$('bc').textContent='Cliquez sur un lac • '+sp.cost.toLocaleString('fr-FR')+' € / poisson • Échap = terminer';}
+function fishClick(){const h=pickGround(true);if(!h.length)return;const p=h[0].point,L=waterLevelAt(p.x,p.z);
+  if(isNaN(L)||L-heightAt(p.x,p.z)<.4){toast('🐟 Cliquez sur l’eau profonde d’un lac');return;}
+  analyzeLakes();const lk=lakeAtPoint(p.x,p.z),sp=FISH[fishMode];if(!lk)return;
+  if(lk.area<20){toast('Ce lac est trop petit pour des poissons');return;}
+  const cap=Math.floor(lk.area/20);if(lk.slots+lk.dead+sp.slots>cap){toast('🐟 Lac trop peuplé (capacité '+cap+' places, poissons morts compris). Agrandissez-le !');return;}
+  if(S.money<sp.cost){toast('Fonds insuffisants');return;}
+  S.money-=sp.cost;S.fish.push({id:S.fn=(S.fn||0)+1,s:fishMode,x:p.x,z:p.z,d:0});fishSync();analyzeLakes();play(900,.1);toast(sp.i+' '+sp.n+' mis à l’eau !'+(lk.pumpOk?'':' ⚠️ Pas de pompe : l’eau va verdir et les poissons peuvent mourir.'));
+  refreshHUD();save();if(S.money<sp.cost)cancelPlacement();}
+function removeFish(f,by){const i=S.fish.indexOf(f);if(i<0)return;S.fish.splice(i,1);const g=fishMeshes.get(f.id);if(g){scene.remove(g);fishMeshes.delete(f.id);}
+  toast(by?'🧽 L’entreteneur a retiré un poisson mort':'🗑️ Poisson mort retiré');play(500,.08);analyzeLakes();save();}
+function deadFishClick(){const gs=[];fishMeshes.forEach(g=>{if(g.userData.dead)gs.push(g);});if(!gs.length)return false;ray.setFromCamera(mouse,camera);const hs=ray.intersectObjects(gs,true);
+  if(!hs.length)return false;let o=hs[0].object;while(o&&!(o.userData&&o.userData.fid))o=o.parent;if(!o){gs.forEach(g=>{});return false;}const f=S.fish.find(q=>q.id===o.userData.fid);if(!f)return false;removeFish(f,false);return true;}
+/* ---------- panneau d'un lac ---------- */
+function lakeHtml(l){const ap=Math.round(l.alg*100),cap=Math.floor(l.area/20),P=(t,c)=>'<div style="font-size:11px;color:'+(c||'#94a3b8')+'">'+t+'</div>';
+  const alive=l.fish.filter(f=>!f.d).length;let h=l.alg>.4?P('🤢 Eau verte et nauséabonde ('+ap+' % d’algues) : les vacanciers fuient','#f87171'):P('✅ Eau propre ('+ap+' % d’algues)','#34d399');
+  h+=l.pumpOk?P('⚙️ Pompe active : l’eau se purifie','#34d399'):(l.pumps.length?P('⚠️ Pompe sans eau : raccordez-la à une citerne remplie','#fbbf24'):P('❌ Pas de pompe (50 000 €, à poser dans l’eau) : l’eau verdit en quelques jours','#f87171'));
+  h+=P('🐟 '+alive+' poisson(s) vivant(s) • places '+(l.slots+l.dead)+'/'+cap)+(l.dead?P('☠️ '+l.dead+' poisson(s) mort(s) : cliquez dessus pour les retirer (ou embauchez un Entreteneur)','#fbbf24'):'');return h;}
+function lakePanel(l){selB=null;selP=null;selLake=l.key;$('in').textContent='🌊 Lac';$('iu').textContent='≈ '+Math.round(l.area)+' m² • profondeur max '+l.maxD.toFixed(1)+' m';
+  $('imov').style.display='none';$('irot').style.display='none';$('idem').style.display='none';$('insp').style.display='flex';$('ix').innerHTML=lakeHtml(l);lastX='';}
+function lakeClick(){const h=pickGround(true);if(!h.length)return false;const p=h[0].point;analyzeLakes();const l=lakeAtPoint(p.x,p.z);if(!l)return false;lakePanel(l);return true;}
+$('icl').addEventListener('click',()=>{selLake=null;});
+function pumpInfoHtml(b){const l=lakeAtPoint(b.x,b.z);if(!l)return '<div style="font-size:11px;color:#f87171">⚠️ La pompe n’est plus dans l’eau</div>';return '<div style="font-size:11px;color:#7dd3fc">🌊 Lac filtré : '+Math.round(l.area)+' m² • algues '+Math.round(l.alg*100)+' %</div><div style="font-size:11px;color:#94a3b8">Consomme 400 L d’eau/jour (citerne 500 L) : raccordez-la et gardez la citerne pleine.</div>';}
+/* ---------- effets sur le camping ---------- */
+function waterFactor(){let smelly=0,clean=0,dead=0,fb=0;lakes.forEach(l=>{if(l.alg>.4)smelly++;else if(l.pumpOk&&l.alg<.25&&l.area>=40)clean++;dead+=l.dead;if(l.alg<.4)l.fish.forEach(fi=>{if(!fi.d)fb+=FISH[fi.s].bonus;});});
+  return Math.max(.35,1-.22*smelly-.04*Math.min(5,dead))*(1+Math.min(.3,.1*clean)+Math.min(.8,fb));}
+function lakesDaily(){analyzeLakes();const hot=tempNow()>=26;let died=0;
+  lakes.forEach(l=>{let a=l.alg;a=l.pumpOk?Math.max(0,a-.5):Math.min(1,a+(hot?.45:.34));l.alg=a;l.vs.forEach(v=>{TA[v]=a;});
+    if(!l.pumpOk)l.fish.forEach(f=>{if(!f.d&&Math.random()<.05+.4*a*a){f.d=1;died++;}});
+    if(a>=.5&&!warned.has(l.key)){warned.add(l.key);toast('🤢 Un lac est devenu vert et sent mauvais ! Les vacanciers fuient. Installez une pompe (50 000 €) reliée à une citerne.');}
+    if(a<.3)warned.delete(l.key);});
+  const before=S.fish.length;S.fish=S.fish.filter(f=>!!lakeAtPoint(f.x,f.z));if(S.fish.length<before)toast('🐟 Des poissons sont morts : leur lac n’a plus d’eau.');
+  if(died)toast('☠️ '+died+' poisson(s) mort(s) ! Cliquez dessus pour les retirer, ou faites rechercher le métier d’Entreteneur.');
+  analyzeLakes();waterRebuild();fishSync();saveTerrain();}
+/* ---------- entreteneur ---------- */
+const entW=[];
+function entSync(){const n=S.staff.ent||0;while(entW.length<n){const m=mkHuman(0x0ea5e9,'ent');m.position.set(EX-4+Math.random()*4,0,-17);scene.add(m);entW.push({m:m,task:null,prog:0,shore:null});}
+  while(entW.length>n){const w=entW.pop();scene.remove(w.m);}}
+function shoreFor(f,mx,mz){for(let r=1.5;r<40;r+=1.5){let best=null,bd=1e9;for(let a=0;a<32;a++){const x=f.x+Math.cos(a/32*6.283)*r,z=f.z+Math.sin(a/32*6.283)*r;
+    if(isNaN(waterLevelAt(x,z))&&x>TX0&&x<TX0+TNX*TCS&&z>TZ0&&z<TZ0+TNZ*TCS){const d=Math.hypot(x-mx,z-mz);if(d<bd){bd=d;best=[x,z];}}}
+    if(best)return best;}return [f.x,f.z];}
+function walkTo(m,tx,tz,sp,t){const px=m.position.x,pz=m.position.z,a0=Math.atan2(tx-px,tz-pz);
+  for(const da of [0,.7,-.7,1.4,-1.4,2.2]){const a=a0+da,nx=px+Math.sin(a)*sp,nz=pz+Math.cos(a)*sp;if(isNaN(waterLevelAt(nx,nz))&&Math.abs(heightAt(nx,nz)-heightAt(px,pz))<1){m.position.set(nx,heightAt(nx,nz),nz);m.rotation.y=a;break;}}
+  const u=m.userData;u.l.rotation.x=Math.sin(t*10)*.5;u.r.rotation.x=-Math.sin(t*10)*.5;u.la.rotation.x=-Math.sin(t*10)*.4;u.ra.rotation.x=Math.sin(t*10)*.4;}
+function entTick(sdt,gd,t){entW.forEach((w,wi)=>{if(w.task&&!S.fish.includes(w.task))w.task=null;
+  if(!w.task){const f=S.fish.find(q=>q.d&&!entW.some(o=>o!==w&&o.task===q));if(f){w.task=f;w.prog=0;w.shore=shoreFor(f,w.m.position.x,w.m.position.z);}}
+  const tx=w.task?w.shore[0]:EX-6+wi*1.2,tz=w.task?w.shore[1]:-16,dx=tx-w.m.position.x,dz=tz-w.m.position.z,dist=Math.hypot(dx,dz);
+  if(dist>1.2)walkTo(w.m,tx,tz,3.2*sdt,t);
+  else if(w.task){w.m.position.y=heightAt(w.m.position.x,w.m.position.z);w.m.rotation.y=Math.atan2(w.task.x-w.m.position.x,w.task.z-w.m.position.z);w.m.userData.ra.rotation.x=-1.2+Math.sin(t*8)*.5;
+    w.prog+=gd/(96*.08);if(w.prog>=1){removeFish(w.task,true);w.task=null;}}});}
+/* ---------- boucle ---------- */
+const stinkN=70,stinkP=new Float32Array(stinkN*3).fill(-99),stinkL=new Float32Array(stinkN),stinkG=new THREE.BufferGeometry();stinkG.setAttribute('position',new THREE.BufferAttribute(stinkP,3));
+const stinkPts=new THREE.Points(stinkG,new THREE.PointsMaterial({color:0x9cba3a,size:2.4,transparent:true,opacity:.35,depthWrite:false}));stinkPts.frustumCulled=false;scene.add(stinkPts);
+const lakePill=document.createElement('div');lakePill.className='pill';lakePill.innerHTML='<small>🌊 Lacs</small><b id="lkt">—</b>';$('rpill').parentNode.insertBefore(lakePill,$('rpill'));
+let tT0=0;
+function terrainTick(dt){const t=clock.elapsedTime;
+  if(brushOn){const surf=brush.mode==='fill'||brush.mode==='drain',h=pickGround(surf);
+    if(h.length){const p=h[0].point;ringUpdate(p.x,p.z,surf?1.6:brush.r,BCOL[brush.mode],surf);if(painting&&ptrs.size<2)brushApply(p.x,p.z,dt);}
+    if(painting&&ptrs.size>=2)brushUp();}
+  else if(fishMode!==null){const h=pickGround(true);if(h.length)ringUpdate(h[0].point.x,h[0].point.z,1.6,0x38bdf8,true);else brushRing.visible=false;}
+  else brushRing.visible=false;
+  if(tDirty){tRefresh(tDirty);tDirty=null;}
+  if(wDirty&&t-lastWaterT>.25){lastWaterT=t;fixWater();}
+  lkTex.offset.x+=dt*.012;lkTex.offset.y+=dt*.007;
+  /* pompes */
+  meshes.forEach(m=>{const b=m.userData.b;if(!b||b.t!=='pump')return;const ok=!!(b.wo&&!b.br),u=m.userData;
+    if(u.rot)u.rot.rotation.y+=dt*(ok?7:0);if(u.pled)u.pled.material.color.setHex(ok?0x22c55e:0xef4444);if(u.jet){u.jet.visible=ok;u.jet.scale.y=.8+.3*Math.sin(t*9);}m.position.y=bY(b);});
+  /* poissons */
+  const run=S.speed>0;
+  S.fish.forEach(f=>{const g=fishMeshes.get(f.id);if(!g)return;const u=g.userData,L=waterLevelAt(f.x,f.z);
+    if(f.d){g.position.set(f.x,(isNaN(L)?-.1:L)+.03+Math.sin(t*1.5+f.id)*.015,f.z);g.rotation.z=Math.PI;return;}
+    if(isNaN(L))return;
+    if(run){u.tT-=dt;if(u.tT<=0){u.tT=1+Math.random()*3;u.want=u.ang+(Math.random()-.5)*1.8;u.sp=.5+Math.random()*.8;}
+      let da=u.want-u.ang;da=Math.atan2(Math.sin(da),Math.cos(da));u.ang+=da*Math.min(1,dt*2.5);
+      const sx=Math.sin(u.ang),sz=Math.cos(u.ang),la=waterLevelAt(f.x+sx*2.2,f.z+sz*2.2);
+      if(isNaN(la)||la-heightAt(f.x+sx*2.2,f.z+sz*2.2)<.35){u.want=u.ang+(Math.random()<.5?1:-1)*(1.3+Math.random());u.tT=1.2;u.ang+=(u.want>u.ang?1:-1)*dt*2.5;}
+      else{const nx=f.x+sx*u.sp*dt,nz=f.z+sz*u.sp*dt,nl=waterLevelAt(nx,nz);if(!isNaN(nl)&&nl-heightAt(nx,nz)>.3){f.x=nx;f.z=nz;}}}
+    const dep=L-heightAt(f.x,f.z);g.position.set(f.x,L-Math.min(.45,dep*.5)-.05,f.z);g.rotation.y=u.ang;g.rotation.z=0;u.tail.rotation.y=Math.sin(t*(6+u.sp*5)+f.id)*.5;});
+  if(run)entTick(dt*Math.min(S.speed,3),dt*S.speed,t);
+  /* algues : bulles nauséabondes */
+  const sm=lakes.filter(l=>l.alg>.45);
+  for(let i=0;i<stinkN;i++){if(stinkL[i]<=0){if(!sm.length){stinkP[i*3+1]=-99;continue;}const l=sm[Math.random()*sm.length|0],v=l.vs[Math.random()*l.vs.length|0];stinkP[i*3]=TX0+(v%TW1)*TCS+(Math.random()-.5)*2;stinkP[i*3+1]=l.level+.2;stinkP[i*3+2]=TZ0+((v/TW1)|0)*TCS+(Math.random()-.5)*2;stinkL[i]=1.5+Math.random()*2;}
+    else{stinkL[i]-=dt;stinkP[i*3+1]+=dt*.9;if(stinkL[i]<=0)stinkP[i*3+1]=-99;}}
+  stinkG.attributes.position.needsUpdate=true;
+  /* périodique */
+  hudT+=dt;if(hudT>1){hudT=0;analyzeLakes();
+    const sm2=lakes.filter(l=>l.alg>.4).length,al=S.fish.filter(f=>!f.d).length,dd=S.fish.filter(f=>f.d).length;
+    $('lkt').textContent=lakes.length?((sm2?'🤢 verte':'✅ propre')+(al||dd?' • 🐟'+al+(dd?' ☠️'+dd:''):'')):'—';
+    $('lkt').style.color=sm2||dd?'#f87171':'';lakePill.title=sm2?'Un lac est vert : posez une pompe reliée à une citerne !':'';
+    if(selLake!==null&&$('insp').style.display==='flex'&&!selB&&!selP){const l=lakes.find(q=>q.key===selLake)||lakeAtPoint(TX0+(selLake%TW1)*TCS,TZ0+((selLake/TW1)|0)*TCS);if(l)$('ix').innerHTML=lakeHtml(l);}}
+}
+function bindBuildExtras(b){
+  b.querySelectorAll('[data-fish]').forEach(x=>x.onclick=()=>{closeMod();startFish(+x.dataset.fish);});
+  b.querySelectorAll('[data-bm0]').forEach(x=>x.onclick=()=>{brush.mode=x.dataset.bm0;openMod('build');});
+  const r=b.querySelector('#bpr');if(r)r.oninput=()=>{brush.r=+r.value;b.querySelector('#bprv').textContent=brush.r+' m';};
+  const s=b.querySelector('#bps');if(s)s.oninput=()=>{brush.str=+s.value;};
+  const go=b.querySelector('#bpgo');if(go)go.onclick=()=>{closeMod();brushStart();};}
+function fishCardsHtml(){return FISH.map((f,i)=>'<div class="card"><div style="font-size:26px">'+f.i+'</div><b>'+f.n+'</b><div style="color:var(--mu)">'+f.sz+' • attire +'+String(+(f.bonus*100).toFixed(1)).replace('.',',')+' % de clients</div><div style="color:var(--mu);font-size:11px">Occupe '+f.slots+' place'+(f.slots>1?'s':'')+' de lac (1 place / 20 m²). Meurt si l’eau verdit : installez une pompe !</div><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:#34d399">'+f.cost.toLocaleString('fr-FR')+' €</b><button class="btn" data-fish="'+i+'" '+(S.money<f.cost?'disabled':'')+'>Mettre à l’eau</button></div></div>').join('');}
+function terrainPanelHtml(){return '<div class="card" style="grid-column:1/-1;gap:10px"><b style="font-size:15px">➕ Pinceau de terrain</b><div style="color:var(--mu)">Un pinceau rond pour modeler vos parcelles achetées (hors entrée, bâtiments et chemins). <b>Creuser</b> = trou de terre • <b>Monter</b> = montagne • <b>Aplanir</b> • <b>Remplir d’eau</b> = un creux se remplit d’eau jusqu’au bord • <b>Vider l’eau</b>. Les bâtiments se posent sur sol plat et sec (le sol est aplani dessous). Pour une eau propre : une <b>pompe</b> (50 000 €, dans l’eau) reliée à une citerne.</div><div style="display:flex;gap:6px;flex-wrap:wrap">'+BMODES.map(m=>'<button class="btn'+(brush.mode===m[0]?'':' s')+'" data-bm0="'+m[0]+'">'+m[1]+'</button>').join('')+'</div><label style="display:flex;gap:8px;align-items:center">Rayon du pinceau <input type="range" id="bpr" min="2" max="30" value="'+brush.r+'" style="flex:1"><b id="bprv">'+brush.r+' m</b></label><label style="display:flex;gap:8px;align-items:center">Force <input type="range" id="bps" min="1" max="5" value="'+brush.str+'" style="flex:1"></label><button class="btn" id="bpgo">🖌️ Activer le pinceau</button></div>';}
+function flattenPath(p){const K=PK.find(k=>k.k===p.k),hw=(K?K.w:3)/2+.5,P=p.pts;let ch=false,a0=1e9,a1=-1,b0=1e9,b1=-1;
+  P.forEach(a=>{a0=Math.min(a0,a[0]);a1=Math.max(a1,a[0]);b0=Math.min(b0,a[1]);b1=Math.max(b1,a[1]);});
+  const i0=Math.max(1,Math.floor((a0-hw-TX0)/TCS)),i1=Math.min(TNX-1,Math.ceil((a1+hw-TX0)/TCS)),j0=Math.max(1,Math.floor((b0-hw-TZ0)/TCS)),j1=Math.min(TNZ-1,Math.ceil((b1+hw-TZ0)/TCS));
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const x=TX0+i*TCS,z=TZ0+j*TCS;let hit=p.closed&&inPolyP(x,z,P);
+    if(!hit)for(let q=0;q<P.length-1+(p.closed?1:0);q++){if(segDist(x,z,P[q],P[(q+1)%P.length])<=hw){hit=true;break;}}
+    if(hit){const k=j*TW1+i;if(TH[k]!==0||TW[k]>-90){TH[k]=0;TW[k]=-99;ch=true;}}}
+  if(ch){tMark(i0,i1,j0,j1);tRefresh(tDirty);tDirty=null;fixWater();saveTerrain();}}
+fishSync();analyzeLakes();waterRebuild();
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.1);
-  panKeys(dt);worldTick(dt);extraTick(dt);pFxTick(dt);if(spectate)cineTick(dt);
+  panKeys(dt);worldTick(dt);extraTick(dt);pFxTick(dt);terrainTick(dt);if(spectate)cineTick(dt);
   if(S.speed>0){
     S.time+=dt*S.speed/4;
     if(S.time>=24){S.time-=24;endOfDay();syncPeople();}
