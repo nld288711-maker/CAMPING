@@ -1372,6 +1372,8 @@ function connectAll(){
   S.paths.forEach(p=>{const P=p.pts;
     if(p.closed){let a=[1e9,1e9,-1e9,-1e9];P.forEach(q=>{a=[Math.min(a[0],q[0]),Math.min(a[1],q[1]),Math.max(a[2],q[0]),Math.max(a[3],q[1])];});for(let x=a[0];x<=a[2];x+=2)for(let z=a[1];z<=a[3];z+=2)if(inPoly(x,z,P))NODES.push([x,z]);}
     for(let i=0;i<P.length-(p.closed?0:1);i++){const A=P[i],B=P[(i+1)%P.length],n=Math.max(1,Math.ceil(Math.hypot(B[0]-A[0],B[1]-A[1])/2));for(let k=0;k<=n;k++)NODES.push([A[0]+(B[0]-A[0])*k/n,A[1]+(B[1]-A[1])*k/n]);}});
+  S.buildings.forEach(b=>{if(b.t!=='curve'&&b.t!=='uturn')return;const a=b.rot||0,c=Math.cos(a),sn=Math.sin(a),L=(lx,lz)=>[b.x+lx*c+lz*sn,b.z-lx*sn+lz*c],U=b.t==='uturn';   // virages et demi-tours = routes à part entière (largeur 8 m)
+    [3,5,7,9].forEach(r=>{const n=Math.max(2,Math.ceil(r*(U?Math.PI:Math.PI/2)/2));for(let k=0;k<=n;k++){const f=k/n*(U?Math.PI:Math.PI/2);NODES.push(U?L(r*Math.cos(f),5-r*Math.sin(f)):L(-6+r*Math.cos(f),6-r*Math.sin(f)));}});});
   const H=new Map();NB=NODES.map(()=>[]);
   NODES.forEach((n,i)=>{const k=Math.floor(n[0]/3)+','+Math.floor(n[1]/3);if(!H.has(k))H.set(k,[]);H.get(k).push(i);});
   NODES.forEach((n,i)=>{const cx=Math.floor(n[0]/3),cz=Math.floor(n[1]/3);for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const l=H.get((cx+a)+','+(cz+b));if(l)l.forEach(j=>{if(j!==i&&(NODES[j][0]-n[0])*(NODES[j][0]-n[0])+(NODES[j][1]-n[1])*(NODES[j][1]-n[1])<10.5)NB[i].push(j);});}});
