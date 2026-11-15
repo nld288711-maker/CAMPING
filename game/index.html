@@ -676,8 +676,9 @@ rebuildAll();
 /* ---------- PARCELLES : bordures ---------- */
 const borders=new THREE.Group();scene.add(borders);
 const GR=1;let gridOn=false;
-const gridMesh=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.16}));gridMesh.visible=false;scene.add(gridMesh);
-function buildGrid(){const v=[];S.parcels.filter(p=>p.owned).forEach(p=>{for(let x=p.minX;x<=p.maxX;x+=GR)v.push(x,.12,p.minZ,x,.12,p.maxZ);for(let z=p.minZ;z<=p.maxZ;z+=GR)v.push(p.minX,.12,z,p.maxX,.12,z);});gridMesh.geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));}
+const gridMesh=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x38bdf8,transparent:true,opacity:.6,fog:false,toneMapped:false,depthWrite:false}));gridMesh.visible=false;scene.add(gridMesh);
+function gridY(x,z){let y=heightAt(x,z);const L=waterLevelAt(x,z);if(!isNaN(L)&&L>y)y=L;return y+.12;}
+function buildGrid(){const v=[],ST=2.5;S.parcels.filter(p=>p.owned).forEach(p=>{for(let x=p.minX;x<=p.maxX;x+=GR)for(let z=p.minZ;z<p.maxZ;z+=ST){const z2=Math.min(p.maxZ,z+ST);v.push(x,gridY(x,z),z,x,gridY(x,z2),z2);}for(let z=p.minZ;z<=p.maxZ;z+=GR)for(let x=p.minX;x<p.maxX;x+=ST){const x2=Math.min(p.maxX,x+ST);v.push(x,gridY(x,z),z,x2,gridY(x2,z),z);}});gridMesh.geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));}
 function toggleGrid(){gridOn=!gridOn;gridMesh.visible=gridOn||!!placing;toast(gridOn?'Grille de construction affichée (1 m par case)':'Grille masquée');}
 function refreshBorders(){buildGrid();
   while(borders.children.length)borders.remove(borders.children[0]);
@@ -872,7 +873,7 @@ function movePlacement(){
     if(d.beach&&!onBeach)ok=false;
     if(!d.beach&&d.acc&&onBeach)ok=false;
   }
-  if(ok&&x+w>EX-5&&x-w<EX+6&&z+dd>-21&&z-dd<-.2)ok=false; // entrée + parking réservés
+  if(ok&&!['road','roadsand','curve','uturn','path','pathgravel','pathwood'].includes(d.t)&&x+w>EX-5&&x-w<EX+6&&z+dd>-21&&z-dd<-.2)ok=false; // entrée + parking réservés (les routes et chemins y sont permis)
   if(ok){ // collision
     ok=!S.buildings.some(b=>{
       if(b===moving)return false;const bd=def(b.t);
@@ -1650,7 +1651,7 @@ function brushDown(){const h=pickGround(brush.mode==='fill'||brush.mode==='drain
   eMask=buildEditMask();painting=true;strokeWarn=false;
   const i=Math.round((p.x-TX0)/TCS),j=Math.round((p.z-TZ0)/TCS);if(i<1||j<1||i>=TNX||j>=TNZ||!eMask[j*TW1+i]){toast('⛔ Zone non modifiable : parcelle non achetée, entrée ou construction/chemin (rayon réduit autour).');}}
 function brushUp(){if(painting){painting=false;endStroke();}}
-function endStroke(){if(tDirty){tRefresh(tDirty);tDirty=null;}fixWater();saveTerrain();followY();fishSync();save();}
+function endStroke(){if(tDirty){tRefresh(tDirty);tDirty=null;}fixWater();buildGrid();saveTerrain();followY();fishSync();save();}
 function followY(){S.buildings.forEach(b=>{if(FOLLOW(b.t)||b.t==='pump'){const m=meshes.get(b.id);if(m)m.position.y=bY(b);}});}
 const brushRing=new THREE.LineLoop(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(64*3),3)),new THREE.LineBasicMaterial({color:0xffffff,depthTest:false,transparent:true}));
 brushRing.renderOrder=9;brushRing.visible=false;brushRing.frustumCulled=false;scene.add(brushRing);
@@ -1700,8 +1701,9 @@ function fishClick(){const h=pickGround(true);if(!h.length)return;const p=h[0].p
   if(lk.area<20){toast('Ce lac est trop petit pour des poissons');return;}
   const cap=Math.floor(lk.area/20);if(lk.slots+lk.dead+sp.slots>cap){toast('🐟 Lac trop peuplé (capacité '+cap+' places, poissons morts compris). Agrandissez-le !');return;}
   if(S.money<sp.cost){toast('Fonds insuffisants');return;}
+  if(sp.cost>=5000&&!confirm('Acheter 1 × '+sp.n+' pour '+sp.cost.toLocaleString('fr-FR')+' € ?'))return;
   S.money-=sp.cost;S.fish.push({id:S.fn=(S.fn||0)+1,s:fishMode,x:p.x,z:p.z,d:0});fishSync();analyzeLakes();play(900,.1);toast(sp.i+' '+sp.n+' mis à l’eau !'+(lk.pumpOk?'':' ⚠️ Pas de pompe : l’eau va verdir et les poissons peuvent mourir.'));
-  refreshHUD();save();if(S.money<sp.cost)cancelPlacement();}
+  refreshHUD();save();if(S.money<sp.cost||sp.cost>=5000)cancelPlacement();}
 function removeFish(f,by){const i=S.fish.indexOf(f);if(i<0)return;S.fish.splice(i,1);const g=fishMeshes.get(f.id);if(g){scene.remove(g);fishMeshes.delete(f.id);}
   toast(by?'🧽 L’entreteneur a retiré un poisson mort':'🗑️ Poisson mort retiré');play(500,.08);analyzeLakes();save();}
 function deadFishClick(){const gs=[];fishMeshes.forEach(g=>{if(g.userData.dead)gs.push(g);});if(!gs.length)return false;ray.setFromCamera(mouse,camera);const hs=ray.intersectObjects(gs,true);
@@ -1748,7 +1750,7 @@ const stinkN=70,stinkP=new Float32Array(stinkN*3).fill(-99),stinkL=new Float32Ar
 const stinkPts=new THREE.Points(stinkG,new THREE.PointsMaterial({color:0x9cba3a,size:2.4,transparent:true,opacity:.35,depthWrite:false}));stinkPts.frustumCulled=false;scene.add(stinkPts);
 const lakePill=document.createElement('div');lakePill.className='pill';lakePill.innerHTML='<small>🌊 Lacs</small><b id="lkt">—</b>';$('rpill').parentNode.insertBefore(lakePill,$('rpill'));
 let tT0=0;
-function terrainTick(dt){const t=clock.elapsedTime;truckTick(dt);
+function terrainTick(dt){const t=clock.elapsedTime;truckTick(dt);gridMesh.material.opacity=.65-.3*Math.min(1,nightF||0);
   if(brushOn){const surf=brush.mode==='fill'||brush.mode==='drain',h=pickGround(surf);
     if(h.length){const p=h[0].point;ringUpdate(p.x,p.z,surf?1.6:brush.r,BCOL[brush.mode],surf);if(painting&&ptrs.size<2)brushApply(p.x,p.z,dt);}
     if(painting&&ptrs.size>=2)brushUp();}
