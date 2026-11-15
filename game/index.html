@@ -191,6 +191,7 @@ const TECHS=[
 {id:'resto2',i:'🍕',n:'Restauration variée',cost:60000,days:6,req:['commerce'],u:['pizzeria','creperie'],d:'Débloque la pizzeria et la crêperie.'},
 {id:'brigade',i:'👨‍🍳',n:'Brigade de cuisine',cost:30000,days:4,req:['commerce'],d:'Permet d\'embaucher serveurs et cuisiniers (obligatoires pour ouvrir un restaurant).'},
 {id:'eau',i:'💧',n:"Gestion de l'eau",cost:2000,days:1,u:['tank'],d:"Débloque les citernes d'eau (500 L)."},
+{id:'camion',i:'🚛',n:'Camion-citerne automatique',cost:50000,days:5,req:['eau'],d:"Quand une citerne est vide, un camion-citerne arrive et la remplit tout seul (même prix que le remplissage manuel : 0,15 €/L)."},
 {id:'entretien',i:'🧽',n:'Métier : Entreteneur',cost:12000,days:3,req:['eau'],d:"Débloque l'Entreteneur : il retire tout seul les poissons morts des lacs."},
 {id:'elec',i:'⚡',n:'Réseau électrique',cost:4000,days:2,u:['transfo'],d:'Débloque les transformateurs.'},
 {id:'eolien',i:'🌬️',n:'Énergie éolienne',cost:20000,days:4,req:['elec'],u:['wind'],d:'Débloque les éoliennes.'},
@@ -774,7 +775,7 @@ const puddles=[];
 function weatherTick(dt){
   if(S.speed>0){wT-=dt*S.speed;if(wT<=0){rainOn=!rainOn;wT=rainOn?40+Math.random()*60:80+Math.random()*160;onWeather();}}
   rain+=((rainOn?1:0)-rain)*Math.min(1,dt*.6);wet+=((rainOn?1:0)-wet)*Math.min(1,dt*(rainOn?.07:.03));
-  flash=Math.max(0,flash-dt*5);if(rainOn&&Math.random()<dt*.05){flash=1;setTimeout(thunder,500+Math.random()*1200);if(Math.random()<.2)strike();}
+  flash=Math.max(0,flash-dt*5);if(rainOn&&Math.random()<dt*.05){flash=1;setTimeout(thunder,500+Math.random()*1200);if(Math.random()<.08)strike();}
   if(mats[0x5cc85c])mats[0x5cc85c].roughness=.9-.5*wet;if(mats[0x475569])mats[0x475569].roughness=.9-.55*wet;
   puddlesTick(dt);
   rainLines.visible=rain>.03;
@@ -1034,7 +1035,7 @@ function endOfDay(){
   S.money+=st.inc-st.exp;
   S.buildings.forEach(b=>{const d=def(b.t);
     if(d.acc&&b.st==='occ'){b.left--;if(b.left<=0){dep++;b.st='dirty';const c=cars.find(q=>q.acc===b&&q.state==='parked');if(c)startLeave(c);}}
-    if(BRK.includes(b.t)&&!b.br&&Math.random()<.12){b.br=1;b.fx=0;toast('⚠️ Panne : '+d.n+' ! Embauchez un mécanicien.');}
+    if(BRK.includes(b.t)&&!b.br&&Math.random()<(b.t==='transfo'?.03:.12)){b.br=1;b.fx=0;toast('⚠️ Panne : '+d.n+' ! Embauchez un mécanicien.');}
   });
   if(S.debt>0){const rp=Math.min(S.debt,Math.ceil(S.debt/30)+100);S.money-=rp;S.debt-=rp;}
   S.day++;if(S.day>30){S.day=1;S.month=S.month%12+1;}
@@ -1745,7 +1746,7 @@ const stinkN=70,stinkP=new Float32Array(stinkN*3).fill(-99),stinkL=new Float32Ar
 const stinkPts=new THREE.Points(stinkG,new THREE.PointsMaterial({color:0x9cba3a,size:2.4,transparent:true,opacity:.35,depthWrite:false}));stinkPts.frustumCulled=false;scene.add(stinkPts);
 const lakePill=document.createElement('div');lakePill.className='pill';lakePill.innerHTML='<small>🌊 Lacs</small><b id="lkt">—</b>';$('rpill').parentNode.insertBefore(lakePill,$('rpill'));
 let tT0=0;
-function terrainTick(dt){const t=clock.elapsedTime;
+function terrainTick(dt){const t=clock.elapsedTime;truckTick(dt);
   if(brushOn){const surf=brush.mode==='fill'||brush.mode==='drain',h=pickGround(surf);
     if(h.length){const p=h[0].point;ringUpdate(p.x,p.z,surf?1.6:brush.r,BCOL[brush.mode],surf);if(painting&&ptrs.size<2)brushApply(p.x,p.z,dt);}
     if(painting&&ptrs.size>=2)brushUp();}
@@ -1796,6 +1797,25 @@ function flattenPath(p){const K=PK.find(k=>k.k===p.k),hw=(K?K.w:3)/2+.5,P=p.pts;
     if(!hit)for(let q=0;q<P.length-1+(p.closed?1:0);q++){if(segDist(x,z,P[q],P[(q+1)%P.length])<=hw){hit=true;break;}}
     if(hit){const k=j*TW1+i;if(TH[k]!==0||TW[k]>-90){TH[k]=0;TW[k]=-99;ch=true;}}}
   if(ch){tMark(i0,i1,j0,j1);tRefresh(tDirty);tDirty=null;fixWater();saveTerrain();}}
+/* ---------- camion-citerne automatique ---------- */
+const TRK={m:null,st:'idle',tank:null,t:0,cd:0,c:0,lv0:0};
+function mkTruck(){const g=new THREE.Group();
+  g.add(box(2.6,.5,6.4,0x334155,0,.7,-.2),box(2.4,2.2,2,0xef4444,0,1.9,2.6),box(2,.9,.12,0x93c5fd,0,2.3,3.62));
+  const tk=cyl(1.25,1.25,4.4,0x2563eb,0,2.3,-1,18);tk.rotation.x=Math.PI/2;g.add(tk);
+  [[-1.3,2.4],[1.3,2.4],[-1.3,-1.8],[1.3,-1.8]].forEach(w=>{const wh=cyl(.6,.6,.45,0x111827,w[0],.6,w[1],12);wh.rotation.z=Math.PI/2;g.add(wh);});
+  const hose=cyl(.1,.1,1.6,0x94a3b8,1.5,1.3,-3,6);hose.rotation.x=Math.PI/2;g.add(hose);return g;}
+function truckGo(tx,tz,sp){const m=TRK.m,dx=tx-m.position.x,dz=tz-m.position.z,d=Math.hypot(dx,dz);if(d<1.2)return true;
+  const st=Math.min(d,12*sp);m.position.x+=dx/d*st;m.position.z+=dz/d*st;m.position.y=heightAt(m.position.x,m.position.z);m.rotation.y=Math.atan2(dx,dz);return false;}
+function truckTick(dt){
+  if(S.speed<=0||!S.techs.includes('camion'))return;const sp=dt*Math.min(S.speed,3);
+  if(TRK.st==='idle'){TRK.cd-=dt;if(TRK.cd>0)return;
+    const tk=S.buildings.find(b=>b.t==='tank'&&(b.lv===undefined?500:b.lv)<=1);if(!tk)return;
+    const c=Math.round(500*.15);if(S.money<c){toast('🚛 Citerne vide, mais fonds insuffisants pour le camion-citerne ('+c+' €)');TRK.cd=60;return;}
+    TRK.tank=tk;TRK.c=c;TRK.st='go';TRK.t=0;TRK.m=mkTruck();TRK.m.position.set(EX,0,-16);scene.add(TRK.m);toast('🚛 Citerne vide : le camion-citerne arrive !');}
+  else if(TRK.st==='go'){if(!S.buildings.includes(TRK.tank)){TRK.st='back';return;}if(truckGo(TRK.tank.x+4.5,TRK.tank.z+4.5,sp)){TRK.st='fill';TRK.t=0;TRK.lv0=TRK.tank.lv===undefined?500:TRK.tank.lv;}}
+  else if(TRK.st==='fill'){if(!S.buildings.includes(TRK.tank)){TRK.st='back';return;}TRK.t+=sp;TRK.tank.lv=Math.min(500,TRK.lv0+(500-TRK.lv0)*Math.min(1,TRK.t/3));TRK.m.rotation.y=Math.atan2(-4.5,-4.5);
+    if(TRK.t>=3){const c=Math.round((500-TRK.lv0)*.15);S.money-=c;TRK.tank.lv=500;toast('🚛 Camion-citerne : citerne remplie automatiquement ('+c+' €)');play(500,.1);refreshHUD();save();TRK.st='back';}}
+  else if(TRK.st==='back'){if(truckGo(EX,-16,sp)){scene.remove(TRK.m);TRK.m=null;TRK.st='idle';TRK.cd=4;}}}
 fishSync();analyzeLakes();waterRebuild();
 function animate(){
   requestAnimationFrame(animate);
