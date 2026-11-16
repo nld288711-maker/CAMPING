@@ -1468,7 +1468,8 @@ function movePlacement(){
   ppos.set(x,0,z);ghost.position.copy(ppos);
   const d=placing,sw=(Math.abs(Math.sin(prot))>.5),w=(sw?d.d:d.w)/2,dd=(sw?d.w:d.d)/2;
   let ok=!!moving||S.money>=d.cost;
-  const corners=[[x-w,z-dd],[x+w,z-dd],[x-w,z+dd],[x+w,z+dd]];
+  let corners=[[x-w,z-dd],[x+w,z-dd],[x-w,z+dd],[x+w,z+dd]];
+  if(d.t==='roundabout')corners=[[x,z],[x+15,z],[x-15,z],[x,z+15],[x,z-15],[x+7.8,z+7.8],[x-7.8,z+7.8],[x+7.8,z-7.8],[x-7.8,z-7.8]]; // vraie empreinte : disque + 4 branches (les coins vides du carré ne comptent plus)
   if(ok&&d.t!=='lamp'&&d.t!=='lampF')ok=corners.every(c=>ownedAt(c[0],c[1]));
   if(ok){ // plage : les objets "plage" uniquement sur la ligne 6, et inversement hors hébergement
     const onBeach=corners.every(c=>{const p=ownedAt(c[0],c[1]);return p&&p.beach;});
@@ -1481,6 +1482,7 @@ function movePlacement(){
       if(b===moving)return false;const bd=def(b.t);
       const bs=Math.abs(Math.sin(b.rot||0))>.5,bw=(bs?bd.d:bd.w)/2,bdd=(bs?bd.w:bd.d)/2;
       const isR=t=>['road','path','pathgravel','pathwood','curve','uturn','roundabout','roadsand'].includes(t);const flat=isR(b.t)&&isR(d.t); // routes entre elles ok
+      if(d.t==='roundabout'&&!flat){const cx=Math.max(Math.abs(b.x-x)-bw,0),cz=Math.max(Math.abs(b.z-z)-bdd,0);if(Math.hypot(cx,cz)<10.8)return true;const ax=Math.abs(b.x-x),az=Math.abs(b.z-z);return (ax<bw+4-.2&&az<bdd+15-.2)||(az<bdd+4-.2&&ax<bw+15-.2);}
       return !flat&&Math.abs(b.x-x)<bw+w-.2&&Math.abs(b.z-z)<bdd+dd-.2;
     });
   }
@@ -2535,7 +2537,7 @@ function terrainPlaceOk(d,x,z,hw,hd){
     for(const p of pts){const l=waterLevelAt(p[0],p[1]);if(isNaN(l)||l-heightAt(p[0],p[1])<.35)return false;L=l;}ghost.position.y=L;return true;}
   if(FOLLOW(d.t)){const L=waterLevelAt(x,z);if(!isNaN(L))return false;ghost.position.y=heightAt(x,z);return true;}
   ghost.position.y=0;
-  for(let xx=x-hw;xx<=x+hw+.01;xx+=1)for(let zz=z-hd;zz<=z+hd+.01;zz+=1){if(!isNaN(waterLevelAt(xx,zz)))return false;if(Math.abs(heightAt(xx,zz))>.45)return false;}
+  for(let xx=x-hw;xx<=x+hw+.01;xx+=1)for(let zz=z-hd;zz<=z+hd+.01;zz+=1){if(d.t==='roundabout'){const dx=Math.abs(xx-x),dz=Math.abs(zz-z);if(!(Math.hypot(dx,dz)<=11.2||(dx<=4&&dz<=15)||(dz<=4&&dx<=15)))continue;}if(!isNaN(waterLevelAt(xx,zz)))return false;if(Math.abs(heightAt(xx,zz))>.45)return false;}
   return true;}
 function terrainAfterBuild(b){if(!b||FOLLOW(b.t)||b.t==='pump')return;const d=def(b.t),sw=Math.abs(Math.sin(b.rot||0))>.5,hw=(sw?d.d:d.w)/2,hd=(sw?d.w:d.d)/2;
   const i0=Math.max(1,Math.floor((b.x-hw-TX0)/TCS)),i1=Math.min(TNX-1,Math.ceil((b.x+hw-TX0)/TCS)),j0=Math.max(1,Math.floor((b.z-hd-TZ0)/TCS)),j1=Math.min(TNZ-1,Math.ceil((b.z+hd-TZ0)/TCS));let ch=false;
