@@ -131,10 +131,86 @@ body:not(.mob) #dock{left:8px;top:8px;bottom:auto;transform:none;flex-direction:
 .mob #insp{left:auto;right:6px;width:min(236px,60vw);top:calc(52px + env(safe-area-inset-top,0px));bottom:auto;max-height:calc(100vh - 150px)}
 .mob #mod .c{margin:0;width:100vw;max-width:100vw;max-height:58vh;border-radius:22px 22px 0 0}.mob #mod{align-items:flex-end!important}
 #start{background:linear-gradient(rgba(255,246,224,.2),rgba(255,236,190,.92));color:var(--tx)}#start h1{color:#3a9a34}
+
+/* ===== STYLE V3 : rendu jeu, crème brillant, sans barres de défilement ===== */
+:root{--cr:linear-gradient(#fffefa,#fbf1d8);--sh3:0 4px 0 rgba(181,146,78,.3),0 10px 20px rgba(60,40,10,.22),inset 0 2px 0 rgba(255,255,255,.95);--gr:linear-gradient(#97e56f,#55c441 50%,#3fae33 52%,#4cbc3d)}
+*{scrollbar-width:none;-ms-overflow-style:none}*::-webkit-scrollbar{display:none;width:0;height:0}
+#logo{position:fixed;left:10px;top:6px;z-index:11;display:flex;align-items:center;gap:6px;pointer-events:none;filter:drop-shadow(0 3px 3px rgba(0,0,0,.35))}
+#logo .lg{font-size:40px;line-height:1}
+#logo .lt{display:flex;flex-direction:column;line-height:.98;font-weight:900;font-style:italic;color:#fff;-webkit-text-stroke:4px #1f6a2b;paint-order:stroke fill}
+#logo .lt b{font-size:21px;letter-spacing:.3px}#logo .lt b+b{color:#ffe45c}
+.mob #logo,body.lobby #logo,.pnj #logo,body.lobby #cleanp,.pnj #cleanp{display:none!important}
+body:not(.mob) #hud{left:228px}
+#hud>div:first-child>div:first-child{font-size:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important}
+#stars:not(:empty){display:inline-block;background:var(--cr);border:2px solid #f3e3bd;border-radius:18px;padding:3px 11px;box-shadow:var(--sh3);font-size:13px}
+.pill{background:var(--cr);border:2px solid #f3e3bd;box-shadow:var(--sh3);border-radius:20px}
+body:not(.mob) #dock{top:78px;max-height:calc(100vh - 160px);padding:2px 4px 8px 2px;width:142px}
+#dock button{background:var(--cr);border:2px solid #f3e3bd;border-radius:18px;box-shadow:var(--sh3);padding:5px 9px 5px 5px}
+#dock button[data-m=build]{background:var(--gr);border-color:#2f8f27;box-shadow:0 4px 0 #26741f,0 8px 14px rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.6);text-shadow:0 1px 0 rgba(0,0,0,.25)}
+#dock button[data-m=build]:hover{background:var(--gr);color:#fff}
+.btn{background:var(--gr);border:2px solid #2f8f27;border-bottom-width:4px;border-radius:16px;box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 3px 6px rgba(0,0,0,.2);text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.btn.s{background:var(--cr);border:2px solid #f3e3bd;border-bottom-width:4px;text-shadow:none}
+.btn.y{background:linear-gradient(#ffe27a,#f5b51f);border:2px solid #c98c0b;border-bottom-width:4px;text-shadow:none}
+.btn.r{background:linear-gradient(#ffb070,#ee6a2a);border:2px solid #c24e17;border-bottom-width:4px}
+.btn.t{background:linear-gradient(#6fe0d2,#1fa99c);border:2px solid #158277;border-bottom-width:4px}
+.btn.big{border-radius:18px;font-size:15px}
+#mod .c,#bar{background:var(--cr);border:2px solid #f3e3bd;box-shadow:var(--sh3)}
+#mod .c{margin-top:78px;max-height:calc(100vh - 92px)}
+#mod .h{background:var(--cr);border-bottom:2px solid #f1e2bd;color:#4a3820}
+.card{background:linear-gradient(#fffefa,#fdf5df);border:2px solid #f1e2bd}
+.rb,.prog{height:12px;background:#eadbb4;box-shadow:inset 0 2px 3px rgba(120,90,40,.25)}
+.rb i,.prog i{box-shadow:inset 0 3px 0 rgba(255,255,255,.4),inset 0 -2px 0 rgba(0,0,0,.1)}
+#toasts{left:322px}
+#insp{top:78px;width:300px;background:var(--cr);border:2px solid #f3e3bd;border-radius:22px;box-shadow:var(--sh3)}
+.mob #insp{top:calc(52px + env(safe-area-inset-top,0px));width:min(290px,78vw)}
+.xx{width:28px;height:28px;border-radius:50%;border:2px solid #e8d5ab;background:linear-gradient(#fff,#f3e6c4);color:#7a6140;font-weight:900;cursor:pointer;box-shadow:0 2px 0 rgba(181,146,78,.3);flex:none;font-size:14px}
+.vh,.bch{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:15px;color:#4a3820;border-bottom:2px solid #f1e2bd;background:var(--cr);border-radius:20px 20px 0 0}
+.vh b,.bch b{flex:1;font-weight:900}.bci,.vh>span{font-size:20px}
+.vbody{padding:10px 12px 12px}
+.vtop{display:flex;gap:10px;align-items:flex-start}
+.pf{width:84px;height:98px;flex:none;border-radius:16px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);overflow:hidden}
+.pf svg,.dbub .av svg,#clav svg{width:100%;height:100%;display:block}
+.vi{display:flex;flex-direction:column;gap:2px;min-width:0}.vi b{font-size:14px;font-weight:900}.vi small{font-size:12px;font-weight:700;color:#7a6140}
+.vi .f{color:#e86a9a}.vi .m{color:#4a8fe0}
+.loc{display:inline-flex;gap:4px;align-items:center;font-weight:800;font-size:12px}
+.mchip{align-self:flex-start;background:#e1f6c9;border:2px solid #c9e9a2;color:#2f7d22;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:900;margin-top:4px}
+.mchip.w{background:#fff0c4;border-color:#f5d77a;color:#9a6a00}.mchip.b{background:#ffe0d6;border-color:#f5b8a6;color:#c23a1f}
+.hap2{display:flex;align-items:center;gap:8px;margin:10px 0 6px}.hap2>span:first-child{font-size:30px;line-height:1}
+.hb{position:relative;flex:1;height:22px;border-radius:12px}.hb i{border-radius:12px}.hb em{position:absolute;left:12px;top:0;line-height:22px;font-style:normal;font-weight:900;font-size:13px;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.vr{display:flex;align-items:center;gap:6px;margin:5px 0;font-size:12px;font-weight:800}.vr .vi2{width:20px;text-align:center;font-size:15px}.vr .vl{width:56px}.vr .rb{flex:1}.vr b{width:36px;text-align:right}
+.dh{display:flex;align-items:center;gap:6px;font-weight:900;font-size:13px;margin:10px 0 4px}.dh i{width:20px;height:20px;border-radius:50%;background:linear-gradient(#ffc24d,#f0922a);color:#fff;font-style:normal;text-align:center;line-height:20px;font-size:13px}
+.dbub{display:flex;align-items:center;gap:8px;background:#fff;border:2px solid #f1e2bd;border-radius:16px;padding:6px 8px;font-size:12px;font-weight:700;margin:4px 0}
+.dbub .av{width:38px;height:38px;border-radius:50%;overflow:hidden;flex:none;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.vbs{display:flex;gap:8px;margin-top:10px}
+.vbtn{flex:1;border:2px solid #1d5aa8;border-bottom-width:4px;border-radius:16px;padding:6px 4px;color:#fff;font-weight:900;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;background:linear-gradient(#6fb6ff,#2f86e8 50%,#2272d2 52%,#2c82e0);box-shadow:inset 0 2px 0 rgba(255,255,255,.5);text-shadow:0 1px 0 rgba(0,0,0,.3)}
+.vbtn span{font-size:20px;line-height:1.1}.vbtn.green{background:var(--gr);border-color:#2f8f27;font-size:15px}
+#insp.bc{top:auto!important;bottom:14px!important;left:0!important;right:0!important;margin:0 auto;width:min(580px,calc(100vw - 350px))}
+.mob #insp.bc{left:6px!important;right:6px!important;width:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))!important}
+.bcb{display:flex;gap:10px;padding:10px 12px 12px}
+.bcl{flex:1;background:linear-gradient(#fff9e8,#f7ebcb);border:2px solid #f1e2bd;border-radius:16px;padding:8px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.bct{display:flex;gap:10px}
+.thumb{width:112px;height:92px;border-radius:12px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:54px;flex:none}
+.bcm{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.bk>span{font-size:12.5px;font-weight:900}.bkr{display:flex;align-items:center;gap:6px}.bkr .rb{flex:1}.bkr b{width:38px;text-align:right;font-size:13px}
+.bfn{display:flex;justify-content:space-between;font-weight:900;font-size:12.5px}.okc{color:#2f9e3a}.nokc{color:#e0452f}
+.bcf{display:flex;justify-content:space-between;gap:8px;border-top:2px solid #efe0b8;padding-top:6px;font-size:12px;font-weight:800;color:#6b5636;flex-wrap:wrap}
+.bcr{width:150px;flex:none;display:flex;flex-direction:column;gap:8px}
+.btn.bigb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:15px;line-height:1.15;padding:10px;border-radius:20px}.btn.bigb i{font-style:normal;font-size:34px}
+.btn.sm{padding:6px;font-size:12px}
+#insp.bc #ibt{padding:0 12px 10px}
+.mob .thumb{width:80px;height:70px;font-size:38px}.mob .bcr{width:118px}.mob .bcb{padding:8px}
+#cleanp{position:fixed;left:10px;bottom:14px;width:300px;z-index:11;display:none;align-items:center;gap:8px;padding:8px 10px;background:linear-gradient(#f4ffe6,#dff3c6);border:2px solid #bfe39a;border-radius:20px;box-shadow:var(--sh3);animation:pop .22s ease-out}
+#cleanp .ck{width:32px;height:32px;border-radius:50%;background:var(--gr);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.25);flex:none}
+#cleanp .ct{flex:1;min-width:0}#cleanp .ct b{font-size:13px;display:block}#cleanp .ct span{font-size:11px;color:#6b5636;display:block;font-weight:700}
+#cleanp .prog{height:10px;margin:4px 0 0}
+#clav{width:50px;height:50px;border-radius:14px;overflow:hidden;background:#cfe9a0;flex:none;border:2px solid #fff}
+.mob #cleanp{left:6px;bottom:calc(82px + env(safe-area-inset-bottom,0px));width:min(280px,72vw)}
 </style>
 </head>
 <body>
 <div id="cv"></div>
+<div id="logo"><span class="lg">🏕️</span><span class="lt"><b>Camping</b><b>Manager 3D</b></span></div>
+<div id="cleanp"><span class="ck">✔</span><div class="ct"><b>Nettoyage en cours...</b><span id="cltx"></span><div class="prog"><i id="clbar" style="width:0"></i></div></div><div id="clav"></div></div>
 <div id="err"></div>
 <header id="hud">
   <div style="display:flex;gap:10px;align-items:center">
@@ -1966,12 +2042,13 @@ function makeBase(t){
 }
 /* ---------- PNJ : modèle humain réaliste (articulations hanche/genou, épaule/coude, visage, cheveux, vêtements) ---------- */
 let _HG=null;
-function _humG(){return _HG||(_HG={
-  thigh:new THREE.BoxGeometry(.14,.37,.15),thighU:new THREE.BoxGeometry(.145,.2,.155),thighL:new THREE.BoxGeometry(.125,.17,.135),shin:new THREE.BoxGeometry(.118,.35,.128),shoe:new THREE.BoxGeometry(.13,.07,.24),
-  sleeve:new THREE.BoxGeometry(.115,.17,.115),uarm:new THREE.BoxGeometry(.086,.11,.086),uarmL:new THREE.BoxGeometry(.105,.27,.105),farm:new THREE.BoxGeometry(.078,.23,.078),farmL:new THREE.BoxGeometry(.092,.23,.092),hand:new THREE.BoxGeometry(.075,.085,.06),
-  head:new THREE.SphereGeometry(.125,14,10),ear:new THREE.SphereGeometry(.03,6,5),neck:new THREE.CylinderGeometry(.05,.056,.12,8),cap:new THREE.SphereGeometry(.138,14,8,0,Math.PI*2,0,Math.PI*.56),
-  eye:new THREE.BoxGeometry(.032,.026,.012),brow:new THREE.BoxGeometry(.045,.011,.012),nose:new THREE.BoxGeometry(.026,.04,.04),mouth:new THREE.BoxGeometry(.05,.009,.01),
-  chest:new THREE.BoxGeometry(.37,.47,.24),pelvis:new THREE.BoxGeometry(.35,.13,.225),belt:new THREE.BoxGeometry(.37,.03,.235),bun:new THREE.SphereGeometry(.07,8,6),curl:new THREE.SphereGeometry(.05,6,5),brim:new THREE.BoxGeometry(.2,.02,.13)});}
+function _humG(){if(_HG)return _HG;const C=(a,b,h,n)=>new THREE.CylinderGeometry(a,b,h,n||10),Sp=(r,x,y,z,w,h)=>{const g=new THREE.SphereGeometry(r,w||12,h||9);g.scale(x,y,z);return g;};
+  const sm=new THREE.TorusGeometry(.03,.007,4,10,Math.PI);sm.rotateZ(Math.PI);
+  return _HG={thigh:C(.072,.064,.37),thighU:C(.075,.07,.2),thighL:C(.064,.06,.17),shin:C(.06,.052,.35),shoe:Sp(.085,1,.7,1.5),
+  sleeve:C(.068,.062,.17),uarm:C(.046,.044,.11,8),uarmL:C(.056,.05,.27,8),farm:C(.044,.04,.23,8),farmL:C(.052,.047,.23,8),hand:Sp(.052,1,1,1,8,6),
+  head:new THREE.SphereGeometry(.125,18,14),ear:new THREE.SphereGeometry(.03,6,5),neck:C(.05,.056,.12,8),cap:new THREE.SphereGeometry(.138,18,10,0,Math.PI*2,0,Math.PI*.56),
+  eye:Sp(.02,1,1.35,.6,8,6),brow:new THREE.BoxGeometry(.045,.011,.012),nose:Sp(.02,1,1,1,6,5),mouth:sm,cheek:Sp(.022,1,.7,.5,6,5),
+  chest:C(.205,.175,.47,14).scale(1,1,.72),pelvis:C(.185,.19,.13,14).scale(1,1,.78),belt:C(.19,.19,.03,14).scale(1,1,.8),bun:new THREE.SphereGeometry(.07,8,6),curl:new THREE.SphereGeometry(.05,6,5),brim:new THREE.BoxGeometry(.2,.02,.13)};}
 function mkHuman(col,role){
   const G=_humG(),g=new THREE.Group(),R=a=>a[Math.floor(Math.random()*a.length)];
   const mm=(geo,c,x,y,z)=>{const o=new THREE.Mesh(geo,M(c));o.position.set(x,y,z);return o;};
@@ -1979,9 +2056,9 @@ function mkHuman(col,role){
   const kid=!role&&Math.random()<.22,sc=kid?.68:(role?1:.92+Math.random()*.16);
   const shirt=col!==undefined?col:R([0xef4444,0x3b82f6,0x10b981,0xf59e0b,0xec4899,0x8b5cf6,0xf8fafc,0x14b8a6,0xfacc15,0xf97316]);
   const pants=role==='rec'?0x1e293b:role==='ent'?0x4d6b2a:(role?0x334155:R([0x334155,0x1e3a8a,0x92400e,0xd6d3d1,0x15803d,0x7c2d12,0x0f172a]));
-  const shorts=!role&&Math.random()<.4,skirt=!role&&!shorts&&Math.random()<.25,longS=role?true:(!shorts&&Math.random()<.35);
+  const fem=role==='clean'?true:role?false:Math.random()<.5,shorts=!role&&Math.random()<.4,skirt=!role&&!shorts&&fem&&Math.random()<.45,longS=role?true:(!shorts&&Math.random()<.35);
   const shoeC=role==='ent'?0x1f2937:R([0xf8fafc,0x1f2937,0x92400e,0xdc2626,0x2563eb]);
-  let hz=null,rk=null;
+  let hz=null,rk=null,STY='short';
   // jambes articulées : hanche à 72 cm, genou qui plie selon la rotation de la jambe
   const leg=x=>{const L=new THREE.Group();L.position.set(x,.72,0);
     const th=shorts?[mm(G.thighU,pants,0,-.1,0),mm(G.thighL,skin,0,-.285,0)]:[mm(G.thigh,skirt?skin:pants,0,-.185,0)],kn=new THREE.Group();kn.position.y=-.37;
@@ -1998,9 +2075,9 @@ function mkHuman(col,role){
   if(!skirt)g.add(mm(G.belt,0x1f2937,0,.79,0));
   if(!role&&Math.random()<.25){g.add(mm(new THREE.BoxGeometry(.375,.045,.245),0xf8fafc,0,1.05,0),mm(new THREE.BoxGeometry(.375,.045,.245),0xf8fafc,0,.93,0));}
   // tête : crâne, oreilles, visage (yeux, sourcils, nez, bouche), dans un groupe pour les proportions enfant
-  const hg=new THREE.Group();hg.position.y=1.3;if(kid)hg.scale.setScalar(1.3);
+  const hg=new THREE.Group();hg.position.y=1.3;hg.scale.setScalar(kid?1.55:1.3);
   const hd=new THREE.Mesh(G.head,M(skin));hd.scale.y=1.1;hd.position.y=.11;hg.add(hd,mm(G.ear,skin,-.125,.11,0),mm(G.ear,skin,.125,.11,0));
-  hg.add(mm(G.eye,0x111827,-.045,.125,.115),mm(G.eye,0x111827,.045,.125,.115),mm(G.brow,hair,-.045,.157,.113),mm(G.brow,hair,.045,.157,.113),mm(G.nose,skin,0,.095,.125),mm(G.mouth,0xa14b4b,0,.045,.118));
+  hg.add(mm(G.eye,0x111827,-.045,.125,.115),mm(G.eye,0x111827,.045,.125,.115),mm(G.brow,hair,-.045,.157,.113),mm(G.brow,hair,.045,.157,.113),mm(G.nose,skin,0,.095,.125),mm(G.mouth,0xa14b4b,0,.078,.113),mm(G.cheek,0xf9a8a8,-.078,.07,.1),mm(G.cheek,0xf9a8a8,.078,.07,.1));
   const capM=(c,x,y,z,rx)=>{const o=mm(G.cap,c,x,y,z);o.rotation.x=rx||0;return o;};
   g.add(hg);
   if(role==='mech'){hg.add(capM(0xfacc15,0,.135,0,-.1),mm(G.brim,0xfacc15,0,.145,.12),mm(new THREE.BoxGeometry(.04,.03,.2),0xeab308,0,.275,0));}
@@ -2016,7 +2093,7 @@ function mkHuman(col,role){
   else if(role==='cook'){hg.add(cyl(.125,.14,.14,0xffffff,0,.28,0,12),_sph(.17,0xffffff,0,.4,0));g.add(mm(new THREE.BoxGeometry(.39,.34,.25),0xffffff,0,1.0,0),mm(new THREE.BoxGeometry(.06,.3,.02),0x1e293b,-.08,1.0,.125),mm(new THREE.BoxGeometry(.06,.3,.02),0x1e293b,.08,1.0,.125),mm(new THREE.BoxGeometry(.3,.12,.26),0xdc2626,0,1.22,0));}
   else if(role==='ent'){hg.add(capM(0x0369a1,0,.13,0,-.1),mm(G.brim,0x0369a1,0,.145,.12));g.add(mm(new THREE.BoxGeometry(.33,.22,.02),0x4d6b2a,0,.9,.125),mm(new THREE.BoxGeometry(.03,.3,.02),0x4d6b2a,-.11,1.13,.125),mm(new THREE.BoxGeometry(.03,.3,.02),0x4d6b2a,.11,1.13,.125),cyl(.02,.02,1.2,0x92400e,.12,1.0,-.2,6),new THREE.Mesh(new THREE.TorusGeometry(.12,.015,5,12),M(0x94a3b8)).translateX(.12).translateY(1.62).translateZ(-.2));}
   else{
-    const style=R(['short','short','long','bun','pony','curly','bald','cap','hat']);
+    const style=R(fem?['long','long','bun','pony','curly','short','cap','hat']:['short','short','short','curly','bald','cap','hat']);STY=style;
     if(style==='short'||style==='cap'||style==='hat')hg.add(capM(hair,0,.125,-.01,-.15));
     if(style==='long'){hg.add(capM(hair,0,.125,-.01,-.15),mm(new THREE.BoxGeometry(.27,.32,.1),hair,0,.0,-.11));}
     if(style==='bun'){hg.add(capM(hair,0,.125,-.01,-.15),mm(G.bun,hair,0,.27,-.1));}
@@ -2024,11 +2101,11 @@ function mkHuman(col,role){
     if(style==='curly'){hg.add(capM(hair,0,.12,0,0));for(let i=0;i<7;i++){const a=i/7*6.28;hg.add(mm(G.curl,hair,Math.cos(a)*.12,.2+Math.sin(i*2)*.03,Math.sin(a)*.12));}}
     if(style==='cap')hg.add(capM(R([0xef4444,0x3b82f6,0xfacc15]),0,.14,0,-.1),mm(G.brim,0x1e293b,0,.115,.13));
     if(style==='hat')hg.add(cyl(.3,.3,.025,0xfde68a,0,.2,0,16),cyl(.14,.16,.12,0xfde68a,0,.27,0,12));
-    if(!kid&&style!=='long'&&style!=='bun'&&Math.random()<.14)hg.add(mm(new THREE.BoxGeometry(.15,.07,.08),hair,0,.03,.075));
-    if(Math.random()<.12)hg.add(mm(new THREE.BoxGeometry(.13,.028,.018),Math.random()<.5?0x111827:0x0f172a,0,.125,.13),mm(new THREE.BoxGeometry(.26,.012,.012),0x111827,0,.125,.06));
+    if(!fem&&!kid&&style!=='long'&&style!=='bun'&&Math.random()<.14)hg.add(mm(new THREE.BoxGeometry(.15,.07,.08),hair,0,.03,.075));
+    if(!fem&&!kid&&Math.random()<.12)hg.add(mm(new THREE.BoxGeometry(.13,.028,.018),Math.random()<.5?0x111827:0x0f172a,0,.125,.13),mm(new THREE.BoxGeometry(.26,.012,.012),0x111827,0,.125,.06));
     if(Math.random()<.18)g.add(mm(new THREE.BoxGeometry(.3,.38,.12),R([0x16a34a,0xdc2626,0x2563eb]),0,.96,-.2));
   }
-  g.add(l,r,la,ra);g.scale.setScalar(sc);g.userData={l:l,r:r,la:la,ra:ra,kid:kid,hz:hz,rk:rk,sk:skin,sh:shirt};
+  g.add(l,r,la,ra);g.scale.setScalar(sc);g.userData={l:l,r:r,la:la,ra:ra,kid:kid,hz:hz,rk:rk,sk:skin,sh:shirt,f:fem,hr:hair,st:STY};
   g.traverse(o=>{if(o.isMesh)o.castShadow=true;});return g;
 }
 
@@ -3910,7 +3987,7 @@ let cur=null,follow=null,last='',acc=0,lastDay=-1,msg=null,K={};
 const tracked=b=>{const d=def(b.t);return !!d&&(d.acc||SERV.includes(b.t)||ROAD.includes(b.t));};
 function init(b){if(b.ik===undefined){b.ik=100;b.ic=100;b.iv=0;b.ip=0;b.iu=0;b.io=0;}if((b.t==='pool'||b.t==='slide')&&b.iq===undefined){b.iq=100;b.il=100;}}
 const waterT=b=>Math.round(cl(13+(tempNow()-5)*.55+(b.eo?2:0),11,31));
-function vd(p){if(p.v)return p.v;const kid=p.m.scale.y<.8,f=Math.random()<.5,age=kid?4+(Math.random()*9|0):18+(Math.random()*52|0);
+function vd(p){if(p.v)return p.v;const kid=p.m.scale.y<.8,f=(p.m.userData&&p.m.userData.f!==undefined)?p.m.userData.f:Math.random()<.5,age=kid?4+(Math.random()*9|0):18+(Math.random()*52|0);
  p.v={sx:f?'F':'M',nm:R(f?FF:FM)+' '+R(LN),age,kid,gr:kid?'Famille':R(GR),hu:5+Math.random()*45,th:5+Math.random()*45,fa:5+Math.random()*40,bl:5+Math.random()*50,fun:Math.random()*15,h:70,sat:70,cf:80,dm:[],tg:null,cur:null,bg:R(['#ffd9a8','#c9ecb0','#bfe3f7','#ffc9d6','#e3d4f5'])};return p.v;}
 function visit(v,b){init(b);const t=b.t;b.iv++;b.ic=cl(b.ic-(CLU[t]||0));b.ik=cl(b.ik-(CONDU[t]||.1));
  if(t==='pool'){b.iq=cl(b.iq-1.2);b.il=cl(b.il-.4);}if(t==='slide'){b.iq=cl(b.iq-.8);b.il=cl(b.il-.3);}
@@ -3990,6 +4067,7 @@ function renderB(b){const d=def(b.t),st=status(b);
   h+=al.length?al.map(x=>`<div class="bub">${x}</div>`).join(''):'<div class="chip">✅ Aucun problème</div>';
   h+=`<div class="acts g2">${cleanBtn(b,'Nettoyer la piscine')}<button class="btn y" data-i="maint">🔧 Entretenir (${cost(b)} €)</button><button class="btn t" data-i="check">🧪 Contrôler l’eau (40 €)</button><button class="btn s" data-i="fill">🚰 Remplir (${Math.round((100-b.il)*1.6)} €)</button></div>`;
   return h;}
+ if(!road)return renderBC(b,d,st,cp);
  h+=pct(b.ik,good(b.ik),'État général','','🛠️');
  if(!road)h+=pct(b.ic,good(b.ic),'Propreté','','✨')+(b.ic<50?`<div class="chip b">🟤 Sale : saleté ${Math.round(100-b.ic)}%</div>`:'');
  if(cp)h+=pct(b.iu*100,BL,'Utilisation','','📊')+`<div class="rw"><span class="rl">👥 Visiteurs</span><b style="width:auto">${b.io} / ${cp}</b></div>`;
@@ -4007,24 +4085,47 @@ function renderP(p){const K0=PK.find(k=>k.k===p.k)||{n:'Chemin',i:'🛤️'},ik=
  h+=pct(ik,good(ik),'État général','','🛠️')+`<div class="rw"><span class="rl">♿ Accès</span><b style="width:auto">${NODES.length?'Praticable':'Non relié'}</b></div>`;
  h+=ik<40?'<div class="chip b">⚠️ Revêtement abîmé</div>':'<div class="chip">✅ Aucun problème</div>';
  h+=`<div class="acts"><button class="btn y" data-i="repP">🔧 Réparer (${Math.max(15,Math.round((100-ik)*(p.cost||300)/500))} €)</button></div>`;return h;}
-function renderV(p){const v=vd(p),f=v.sx==='F',h=Math.round(v.h),pos=p.m.position;
- const mood=h>=85?'Très content':h>=65?'Content':h>=45?'Mitigé':h>=25?'Mécontent':'Furieux',e=f?'e':'';
- const face=h>=85?'😄':h>=65?'🙂':h>=45?'😐':h>=25?'😠':'🤬';
- let loc='Sur les chemins';if(p.act&&p.act.b)loc=short(def(p.act.b.t).n);else if(p.hide>0&&v.tg&&S.buildings.includes(v.tg))loc='Dans : '+short(def(v.tg.t).n);
- else{let bd=18,bb=null;S.buildings.forEach(b=>{if(!SERV.includes(b.t)&&!def(b.t).acc)return;const d=Math.hypot(b.x-pos.x,b.z-pos.z);if(d<bd){bd=d;bb=b;}});if(bb)loc='Près de : '+short(def(bb.t).n);}
- const port=v.kid?(f?'👧':'👦'):v.age>60?(f?'👵':'👴'):(f?'👩':'👨');
- let r=`<div class="ih"><div class="art pt" style="background:${v.bg}">${port}</div><div><b>${v.nm} ${f?'♀':'♂'}</b><small>${v.age} ans • Groupe : ${v.gr}</small><small>📍 ${loc}</small></div><button class="xx" data-i="close">✕</button></div>`;
- r+=`<span class="chip ${h>=65?'':h>=40?'w':'b'}">${face} ${mood}${e} !</span>`;
- r+=`<div class="hap"><span>${face}</span><span class="rb"><i style="width:${h}%;background:${good(h)}"></i></span><b>${h}/100</b></div>`;
- r+=pct(v.sat,good(v.sat),'Satisfaction','','⭐')+pct(v.cf,good(v.cf),'Confort','','🛋️')+pct(v.hu,bad(v.hu),'Faim','','🍽️')+pct(v.th,bad(v.th),'Soif','','💧')+pct(v.fa,bad(v.fa),'Fatigue','','😴')+pct(v.bl,bad(v.bl),'Sanitaires','','🚻');
- const nd=[];if(v.hu>60)nd.push('🍽️ Manger');if(v.th>60)nd.push('🥤 Boire');if(v.fa>65)nd.push('😴 Se reposer');if(v.bl>55)nd.push('🚻 Sanitaires');if(v.fun<5)nd.push('🎈 S’amuser');
- r+=`<div class="sec">Besoins actuels</div>`+(nd.length?nd.map(x=>`<span class="chip w">${x}</span>`).join(''):'<span class="chip">✅ Tout va bien</span>');
- r+=`<div class="sec">❗ Demandes</div>`+(v.dm.length?v.dm.slice(0,2).map(x=>`<div class="bub"><span style="font-size:18px">${port}</span>${x}</div>`).join(''):`<div class="bub"><span style="font-size:18px">${port}</span>Tout est parfait, je me régale ! 😊</div>`);
- r+=`<div class="acts"><button class="btn t" data-i="see">👁️ Voir</button><button class="btn ${follow===p?'y':'t'}" data-i="follow">🎯 ${follow===p?'Suivi…':'Suivre'}</button><button class="btn" data-i="close">Fermer</button></div>`;return r;}
+const hx=n=>'#'+(n>>>0).toString(16).padStart(6,'0');
+function faceSVG(L){const s=hx(L.skin),h=hx(L.hair),t=hx(L.shirt),st=L.st||'short';let bk='',fr='';
+ if(st==='long')bk+=`<path d="M19 36 Q17 10 40 10 Q63 10 61 36 L63 74 L17 74Z" fill="${h}"/>`;
+ if(st==='bun')bk+=`<circle cx="40" cy="9" r="9" fill="${h}"/>`;
+ if(st==='pony')bk+=`<ellipse cx="63" cy="42" rx="6" ry="14" fill="${h}"/>`;
+ if(st==='curly')for(let i=0;i<9;i++){const a=Math.PI+i/8*Math.PI;bk+=`<circle cx="${(40+Math.cos(a)*21).toFixed(1)}" cy="${(34+Math.sin(a)*22).toFixed(1)}" r="8" fill="${h}"/>`;}
+ if(st!=='bald')fr+=`<path d="M20 38 Q16 12 40 12 Q64 12 60 38 Q54 25 40 25 Q26 25 20 38Z" fill="${h}"/>`;
+ if(st==='cap')fr+=`<path d="M19 30 Q20 10 40 10 Q60 10 61 30Z" fill="#ef4444"/><rect x="38" y="26" width="30" height="5" rx="2.5" fill="#b91c1c"/>`;
+ if(st==='hat')fr+=`<ellipse cx="40" cy="24" rx="30" ry="6" fill="#f6d77a"/><path d="M24 24 Q26 6 40 6 Q54 6 56 24Z" fill="#f2c94c"/>`;
+ return `<svg viewBox="0 0 80 92" xmlns="http://www.w3.org/2000/svg">${bk}<path d="M6 92 Q8 66 40 64 Q72 66 74 92Z" fill="${t}"/><rect x="35" y="52" width="10" height="14" fill="${s}"/><circle cx="21" cy="40" r="4" fill="${s}"/><circle cx="59" cy="40" r="4" fill="${s}"/><ellipse cx="40" cy="38" rx="19" ry="21" fill="${s}"/>${fr}<circle cx="33" cy="40" r="2.8" fill="#1f2937"/><circle cx="47" cy="40" r="2.8" fill="#1f2937"/><circle cx="34" cy="39" r="1" fill="#fff"/><circle cx="48" cy="39" r="1" fill="#fff"/><circle cx="27" cy="47" r="3.2" fill="#f9a8a8" opacity=".6"/><circle cx="53" cy="47" r="3.2" fill="#f9a8a8" opacity=".6"/><path d="M34 49 Q40 56 46 49" stroke="#a14b4b" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;}
+function lookOf(p,v){const u=p.m.userData||{};return{skin:u.sk===undefined?0xf1c27d:u.sk,hair:u.hr===undefined?0x4a2c12:u.hr,shirt:u.sh===undefined?0x3b82f6:u.sh,st:u.st,f:v.sx==='F'};}
+function isBC(b){return tracked(b)&&!ROAD.includes(b.t)&&b.t!=='pool'&&b.t!=='slide';}
+function renderBC(b,d,st,cp){const cw=b.st==='cleaning',dy=Math.max(0,Math.round((b.ik-30)/(1+.1*(b.ip||0)))),nd=needs(b),ok=st[2]===G;
+ const occ=d.acc?(b.st==='occ'?'Occupé ('+b.left+' n.)':b.st==='dirty'?'À nettoyer':'Libre'):(cp?b.io+' / '+cp:'—');
+ const br=(l,v,ic)=>`<div class="bk"><span>${ic||''} ${l}</span><div class="bkr"><span class="rb"><i style="width:${cl(v)}%;background:${good(v)}"></i></span><b>${Math.round(v)}%</b></div></div>`;
+ return `<div class="bch"><span class="bci">${d.i}</span><b>${short(d.n)}</b><button class="xx" data-i="close">✕</button></div>`+msgH()
+ +`<div class="bcb"><div class="bcl"><div class="bct"><div class="thumb" style="background:${GRAD[d.c]||'linear-gradient(#e8e0cc,#c9bd9c)'}">${d.i}</div><div class="bcm">${br('État général',b.ik)}${br('Propreté',b.ic,'✨')}<div class="bfn"><span class="${ok?'okc':'nokc'}">${ok?'✔':'⚠'} Fonctionnement</span><b style="color:${st[2]}">${ok?'OK':st[1]}</b></div></div></div>`
+ +(nd.length?`<div>${nd.map(x=>`<span class="chip w">🔧 ${x}</span>`).join('')}</div>`:'')
+ +`<div class="bcf"><span>👥 Occupation : <b>${occ}</b></span><span>🔧 Entretien dans <b>${dy} jours</b></span></div></div>`
+ +`<div class="bcr"><button class="btn bigb" data-i="clean" ${cw?'disabled':''}><i>${cw?'🧽':'🧹'}</i>${cw?'Nettoyage en cours…':'Envoyer une femme de ménage'}</button><button class="btn y sm" data-i="maint">🔧 Entretenir (${cost(b)} €)</button></div></div>`;}
+function renderV(p){const v=vd(p),f=v.sx==='F',h=Math.round(v.h),pos=p.m.position,e=f?'e':'';
+ const mood=h>=85?'Très content':h>=65?'Content':h>=45?'Mitigé':h>=25?'Mécontent':'Furieux';
+ const face=h>=85?'😄':h>=65?'🙂':h>=45?'😐':h>=25?'😠':'🤬',L=lookOf(p,v);
+ let loc='Sur les chemins';if(p.act&&p.act.b)loc=short(def(p.act.b.t).n);else if(p.hide>0&&v.tg&&S.buildings.includes(v.tg))loc=short(def(v.tg.t).n);
+ else{let bd=18,bb=null;S.buildings.forEach(b=>{if(!SERV.includes(b.t)&&!def(b.t).acc)return;const d=Math.hypot(b.x-pos.x,b.z-pos.z);if(d<bd){bd=d;bb=b;}});if(bb)loc=short(def(bb.t).n);}
+ const row=(ic,l,val,c)=>`<div class="vr"><span class="vi2">${ic}</span><span class="vl">${l}</span><span class="rb"><i style="width:${cl(val)}%;background:${c}"></i></span><b>${Math.round(val)}%</b></div>`;
+ const dm=v.dm.length?v.dm.slice(0,2):['Tout est parfait, je me régale !'];
+ return `<div class="vh"><span>👥</span><b>${f?'Visiteuse':'Visiteur'}</b><button class="xx" data-i="close">✕</button></div><div class="vbody">`
+ +`<div class="vtop"><div class="pf" style="background:${v.bg}">${faceSVG(L)}</div><div class="vi"><b>${v.nm} <i class="${f?'f':'m'}" style="font-style:normal">${f?'♀':'♂'}</i></b><small>${v.age} ans</small><small>Groupe : ${v.gr}</small><span class="loc">📍 ${loc}</span><span class="mchip ${h>=65?'':h>=40?'w':'b'}">${face} ${mood}${e} !</span></div></div>`
+ +`<div class="hap2"><span>${face}</span><span class="rb hb"><i style="width:${h}%;background:${good(h)}"></i><em>${h} / 100</em></span></div>`
+ +row('🛋️','Confort',v.cf,good(v.cf))+row('🍽️','Faim',v.hu,bad(v.hu))+row('💧','Soif',v.th,bad(v.th))+row('😴','Fatigue',v.fa,bad(v.fa))+row('✨','Propreté',100-v.bl,good(100-v.bl))
+ +`<div class="dh"><i>!</i>Demandes</div>`+dm.map(x=>`<div class="dbub"><span class="av" style="background:${v.bg}">${faceSVG(L)}</span><span>${x}</span></div>`).join('')
+ +`<div class="vbs"><button class="vbtn" data-i="see"><span>👀</span>Voir</button><button class="vbtn" data-i="follow"><span>🎯</span>${follow===p?'Suivi…':'Suivre'}</button><button class="vbtn green" data-i="close">Fermer</button></div></div>`;}
+function updClean(){const el=document.getElementById('cleanp');if(!el)return;const w=workers.find(w=>w.role==='clean'&&w.task&&w.task.st==='cleaning');
+ if(!w){el.style.display='none';return;}
+ if(!el.dataset.i){el.dataset.i=1;document.getElementById('clav').innerHTML=faceSVG({skin:0xf1c27d,hair:0x5b3a1a,shirt:0xfacc15,st:'bun'});}
+ el.style.display='flex';document.getElementById('cltx').textContent='« '+short(def(w.task.t).n).toLowerCase()+' » sera propre sous peu.';document.getElementById('clbar').style.width=Math.round(cl((w.prog||0)*100))+'%';}
 function open(k,o,vm){cur={k,o};last='';const el=$('insp');el.classList.add('rich');el.classList.toggle('vm',!!vm);el.style.display='flex';if(!vm||follow!==o)if(follow&&follow!==o)follow=null;render();}
 function render(){if(!cur)return;const o=cur.o;if(cur.k==='b'&&!S.buildings.includes(o)||cur.k==='v'&&!people.includes(o)||cur.k==='p'&&!S.paths.includes(o)){off(true);return;}
- const h=cur.k==='v'?renderV(o):cur.k==='b'?renderB(o):renderP(o);if(h!==last){$('ins2').innerHTML=h;last=h;}}
-function off(hide){cur=null;follow=null;last='';msg=null;const el=$('insp');el.classList.remove('rich','vm');if(hide)el.style.display='none';}
+ const h=cur.k==='v'?renderV(o):cur.k==='b'?renderB(o):renderP(o);$('insp').classList.toggle('bc',cur.k==='b'&&isBC(o));if(h!==last){$('ins2').innerHTML=h;last=h;}}
+function off(hide){cur=null;follow=null;last='';msg=null;const el=$('insp');el.classList.remove('rich','vm','bc');if(hide)el.style.display='none';}
 function say(t){msg={t,e:Date.now()+7000};last='';render();}
 function dispatch(b){init(b);
  if(b.st==='cleaning')return say('🧽 Un nettoyage est déjà en cours ici.');
@@ -4058,7 +4159,7 @@ return{
   selB=null;selP=null;selLake=null;vd(p);open('v',p,true);return true;},
  tick(dt){
   if(follow&&people.includes(follow)){target.set(follow.m.position.x,0,follow.m.position.z);updCam();}
-  acc+=dt;if(acc<.25)return;const rd=acc;acc=0;
+  acc+=dt;if(acc<.25)return;const rd=acc;acc=0;updClean();
   upd(rd,S.speed>0?rd*Math.min(S.speed,5)/4:0);
   if(cur){if($('insp').style.display!=='flex')off();else render();}},
  lobby(){try{save();}catch(e){}try{closeMod();}catch(e){}toast('💾 Partie sauvegardée');
