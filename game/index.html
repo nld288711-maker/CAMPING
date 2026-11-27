@@ -3647,7 +3647,7 @@ let placing=null,ghost=null,prot=0,ppos=new THREE.Vector3(),pvalid=false;
 function startPlacement(d,mv){if(!mv&&!unlocked(d.t)){toast('🔬 Recherche requise pour construire ça');return;}
   cancelPlacement();placing=d;prot=0;
   ghost=make(d.t);
-  ghost.traverse(c=>{if(c.isMesh){c.material=c.material.clone();c.material.transparent=true;c.material.opacity=.6;}});
+  ghost.traverse(c=>{if(c.isMesh){const gm=m=>{m=m.clone();m.transparent=true;m.opacity=.6;return m;};c.material=Array.isArray(c.material)?c.material.map(gm):gm(c.material);}});
   scene.add(ghost);gridMesh.visible=true;$('brot').style.display='';$('bfin').style.display='none';
   $('bar').style.display='flex';$('bt').textContent='Construction : '+d.n;$('bc').textContent='Coût : '+d.cost.toLocaleString('fr-FR')+' €'+(d.beach?' • à poser sur la plage':'')+(d.t==='pump'?' • à poser DANS l’eau d’un lac':'');
 }
